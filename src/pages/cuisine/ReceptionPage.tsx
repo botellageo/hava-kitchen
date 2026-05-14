@@ -23,7 +23,7 @@ interface UploadedPhoto {
 }
 
 export default function ReceptionPage() {
-  const { restaurant, restaurantId } = useRestaurant();
+  const { restaurant, restaurantId, loading: restaurantLoading } = useRestaurant();
   const { cuisinier } = useCuisinierSession();
   const { generateReceptionId, createReception } = useReceptions(restaurantId);
   const { showToast } = useToast();
@@ -49,6 +49,14 @@ export default function ReceptionPage() {
 
   if (!cuisinier) {
     return <Navigate to="/cuisine" replace />;
+  }
+  // Attendre le 1er load du hook (chaque useRestaurant() instance redémarre son load au mount)
+  if (restaurantLoading) {
+    return (
+      <div className="bg-surface-softer flex min-h-screen items-center justify-center">
+        <div className="text-brand-darker text-sm">Chargement…</div>
+      </div>
+    );
   }
   if (!restaurantId) {
     return <Navigate to="/cuisine/home" replace />;

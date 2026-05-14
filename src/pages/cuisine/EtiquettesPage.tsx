@@ -14,7 +14,7 @@ function todayIso(): string {
 }
 
 export default function EtiquettesPage() {
-  const { restaurant, restaurantId } = useRestaurant();
+  const { restaurant, restaurantId, loading: restaurantLoading } = useRestaurant();
   const { templates, loading: templatesLoading } = useProductTemplates(restaurantId);
   const { createEtiquette } = useEtiquettes(restaurantId);
   const { cuisinier } = useCuisinierSession();
@@ -34,6 +34,13 @@ export default function EtiquettesPage() {
 
   if (!cuisinier) {
     return <Navigate to="/cuisine" replace />;
+  }
+  if (restaurantLoading) {
+    return (
+      <div className="bg-surface-softer flex min-h-screen items-center justify-center">
+        <div className="text-brand-darker text-sm">Chargement…</div>
+      </div>
+    );
   }
   if (!restaurantId) {
     return <Navigate to="/cuisine/home" replace />;
