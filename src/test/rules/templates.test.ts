@@ -92,12 +92,14 @@ describe('firestore.rules — productTemplates/{pid}', () => {
     await assertSucceeds(getDoc(doc(ctx.firestore(), 'restaurants/r1/productTemplates/p1')));
   });
 
-  it('cuisinier (custom claim) peut lire mais pas write', async () => {
+  it('cuisinier (custom claim) peut lire + create + update mais pas delete', async () => {
     await seedRestaurant('r1', 'jb');
     await seedTemplate('r1', 'p1');
     const ctx = testEnv.authenticatedContext('cuisinier-r1-c1', { restaurantId: 'r1' });
+    // Read OK
     await assertSucceeds(getDoc(doc(ctx.firestore(), 'restaurants/r1/productTemplates/p1')));
-    await assertFails(
+    // Create OK (cuisinier peut ajouter à la volée depuis l'écran Étiquettes)
+    await assertSucceeds(
       setDoc(doc(ctx.firestore(), 'restaurants/r1/productTemplates/p2'), {
         nom: 'X',
         dlcDays: 1,
@@ -105,6 +107,11 @@ describe('firestore.rules — productTemplates/{pid}', () => {
         updatedAt: serverTimestamp(),
       }),
     );
+    // Update OK (ajustement DLC à la volée)
+    await assertSucceeds(
+      updateDoc(doc(ctx.firestore(), 'restaurants/r1/productTemplates/p1'), { dlcDays: 4 }),
+    );
+    // Delete refusé (préserve historique d'étiquettes)
     await assertFails(deleteDoc(doc(ctx.firestore(), 'restaurants/r1/productTemplates/p1')));
   });
 

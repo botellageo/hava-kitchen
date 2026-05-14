@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRestaurant } from '@/hooks/useRestaurant';
 import { useProductTemplates, type ProductTemplateDoc } from '@/hooks/useProductTemplates';
 import { useToast } from '@/hooks/useToast';
-import { ProductTemplateFormModal } from '@/components/admin/ProductTemplateFormModal';
+import { ProductTemplateFormModal } from '@/components/ui/ProductTemplateFormModal';
 
 type EditMode = { mode: 'add' } | { mode: 'edit'; template: ProductTemplateDoc };
 

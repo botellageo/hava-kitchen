@@ -1,13 +1,16 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useRestaurant } from '@/hooks/useRestaurant';
-import { useProductTemplates } from '@/hooks/useProductTemplates';
+import { useProductTemplates, type ProductTemplateDoc } from '@/hooks/useProductTemplates';
 import { useEtiquettes } from '@/hooks/useEtiquettes';
 import { useCuisinierSession } from '@/hooks/useCuisinierSession';
 import { useToast } from '@/hooks/useToast';
 import { AppLogo } from '@/components/ui/AppLogo';
+import { ProductTemplateFormModal } from '@/components/ui/ProductTemplateFormModal';
 import { EtiquettePreview } from '@/components/cuisine/EtiquettePreview';
 import { calculateDlc, generateEtiquettePdf } from '@/lib/generateEtiquettePdf';
+
+type TemplateEdit = { mode: 'add' } | { mode: 'edit'; template: ProductTemplateDoc };
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -15,7 +18,12 @@ function todayIso(): string {
 
 export default function EtiquettesPage() {
   const { restaurant, restaurantId, loading: restaurantLoading } = useRestaurant();
-  const { templates, loading: templatesLoading } = useProductTemplates(restaurantId);
+  const {
+    templates,
+    loading: templatesLoading,
+    addTemplate,
+    updateTemplate,
+  } = useProductTemplates(restaurantId);
   const { createEtiquette } = useEtiquettes(restaurantId);
   const { cuisinier } = useCuisinierSession();
   const { showToast } = useToast();
@@ -25,6 +33,7 @@ export default function EtiquettesPage() {
   const [lot, setLot] = useState('');
   const [qte, setQte] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<TemplateEdit | null>(null);
 
   const selectedTemplate = templates.find((t) => t.id === templateId);
   const dlc = useMemo(() => {
@@ -128,19 +137,38 @@ export default function EtiquettesPage() {
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label className="mb-1 block text-sm font-semibold text-gray-700">Produit</label>
-                <select
-                  required
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
-                  className="focus:outline-brand w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base focus:outline-2"
-                >
-                  <option value="">— Choisir —</option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nom} (DLC + {t.dlcDays} j)
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    required
+                    value={templateId}
+                    onChange={(e) => setTemplateId(e.target.value)}
+                    className="focus:outline-brand min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base focus:outline-2"
+                  >
+                    <option value="">— Choisir —</option>
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nom} (DLC + {t.dlcDays} j)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTemplate({ mode: 'add' })}
+                    title="Ajouter un nouveau produit"
+                    className="bg-brand hover:bg-brand-dark shrink-0 rounded-lg px-3 text-sm font-semibold text-white transition"
+                  >
+                    +
+                  </button>
+                </div>
+                {selectedTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingTemplate({ mode: 'edit', template: selectedTemplate })}
+                    className="text-brand-darker mt-1 text-xs font-semibold hover:underline"
+                  >
+                    ✏️ Modifier ce produit
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -211,6 +239,31 @@ export default function EtiquettesPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {editingTemplate && (
+          <ProductTemplateFormModal
+            initial={editingTemplate.mode === 'edit' ? editingTemplate.template : null}
+            onClose={() => setEditingTemplate(null)}
+            onSubmit={async ({ nom, dlcDays }) => {
+              try {
+                if (editingTemplate.mode === 'add') {
+                  const newId = await addTemplate({ nom, dlcDays });
+                  setTemplateId(newId);
+                  showToast({ kind: 'success', message: `${nom} ajouté.` });
+                } else {
+                  await updateTemplate(editingTemplate.template.id, { nom, dlcDays });
+                  showToast({ kind: 'success', message: `${nom} mis à jour.` });
+                }
+                setEditingTemplate(null);
+              } catch (err) {
+                showToast({
+                  kind: 'error',
+                  message: err instanceof Error ? err.message : 'Erreur',
+                });
+              }
+            }}
+          />
         )}
       </main>
     </div>
