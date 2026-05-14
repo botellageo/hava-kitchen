@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { isValidPinFormat } from '@/lib/pin';
 import { PinInput } from '@/components/ui/PinInput';
+import { Modal } from '@/components/ui/Modal';
 
 interface QuickAddCuisinierModalProps {
   open: boolean;
@@ -19,8 +20,6 @@ export function QuickAddCuisinierModal({ open, onCancel, onSubmit }: QuickAddCui
   const [pinConfirm, setPinConfirm] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!open) return null;
 
   function resetAndClose() {
     setPrenom('');
@@ -67,8 +66,8 @@ export function QuickAddCuisinierModal({ open, onCancel, onSubmit }: QuickAddCui
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="shadow-modal w-full max-w-md rounded-2xl bg-white p-6">
+    <Modal open={open}>
+      <div className="p-6">
         <h2 className="text-brand-darker mb-1 text-lg font-bold">Nouveau cuisinier</h2>
         <p className="mb-4 text-sm text-gray-500">Ajout rapide. Tu pourras modifier plus tard.</p>
 
@@ -128,6 +127,6 @@ export function QuickAddCuisinierModal({ open, onCancel, onSubmit }: QuickAddCui
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

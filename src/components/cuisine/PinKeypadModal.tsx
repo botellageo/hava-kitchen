@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NumericKeypad } from './NumericKeypad';
+import { Modal } from '@/components/ui/Modal';
 
 interface PinKeypadModalProps {
   open: boolean;
@@ -64,15 +65,13 @@ export function PinKeypadModal({
     }
   };
 
-  if (!open) return null;
-
   const targetLength = expectedLength ?? MAX_PIN;
   const dots = Array.from({ length: targetLength }, (_, i) => i);
   const canValidate = !expectedLength && pin.length >= MIN_PIN;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="shadow-modal w-full max-w-sm rounded-2xl bg-white p-6">
+    <Modal open={open} size="sm">
+      <div className="p-6">
         <div className="mb-4 text-center">
           <h2 className="text-brand-darker text-lg font-bold">{title}</h2>
           {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
@@ -126,6 +125,6 @@ export function PinKeypadModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

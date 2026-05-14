@@ -4,6 +4,7 @@ import { useCuisiniers, type CuisinierDoc } from '@/hooks/useCuisiniers';
 import { useToast } from '@/hooks/useToast';
 import { isValidPinFormat } from '@/lib/pin';
 import { PinInput } from '@/components/ui/PinInput';
+import { Modal } from '@/components/ui/Modal';
 
 type EditMode = { mode: 'add' } | { mode: 'edit'; cuisinier: CuisinierDoc };
 
@@ -195,8 +196,8 @@ function CuisinierFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="shadow-modal w-full max-w-md rounded-2xl bg-white p-6">
+    <Modal open>
+      <div className="p-6">
         <h2 className="text-brand-darker mb-4 text-lg font-bold">
           {initial ? 'Modifier le cuisinier' : 'Ajouter un cuisinier'}
         </h2>
@@ -268,6 +269,6 @@ function CuisinierFormModal({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

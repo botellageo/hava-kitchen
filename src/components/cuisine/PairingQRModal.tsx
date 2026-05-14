@@ -1,4 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react';
+import { Modal } from '@/components/ui/Modal';
 
 interface PairingQRModalProps {
   url: string;
@@ -7,14 +8,8 @@ interface PairingQRModalProps {
 
 export function PairingQRModal({ url, onClose }: PairingQRModalProps) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="shadow-modal w-full max-w-md rounded-2xl bg-white p-8 text-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal open onClose={onClose} variant="overlay">
+      <div className="p-8 text-center">
         <h2 className="text-brand-darker mb-1 text-lg font-bold">Se connecter sur ton téléphone</h2>
         <p className="mb-6 text-sm text-gray-500">
           Scanne ce QR code avec l'appareil photo de ton téléphone.
@@ -34,6 +29,6 @@ export function PairingQRModal({ url, onClose }: PairingQRModalProps) {
           Fermer
         </button>
       </div>
-    </div>
+    </Modal>
   );
 }

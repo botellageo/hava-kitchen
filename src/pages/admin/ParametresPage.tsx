@@ -3,6 +3,7 @@ import { useRestaurant } from '@/hooks/useRestaurant';
 import { useToast } from '@/hooks/useToast';
 import { isValidPinFormat } from '@/lib/pin';
 import { PinInput } from '@/components/ui/PinInput';
+import { Modal } from '@/components/ui/Modal';
 
 export default function ParametresPage() {
   const { restaurant, verifyManagerPin, updateManagerPin } = useRestaurant();
@@ -93,8 +94,8 @@ function ChangeManagerPinModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="shadow-modal w-full max-w-md rounded-2xl bg-white p-6">
+    <Modal open>
+      <div className="p-6">
         <h2 className="text-brand-darker mb-4 text-lg font-bold">Modifier le PIN gérant</h2>
         <form onSubmit={handleSubmit} className="space-y-3" noValidate>
           <PinInput label="Ancien PIN" value={oldPin} onChange={setOldPin} autoFocus />
@@ -130,6 +131,6 @@ function ChangeManagerPinModal({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }
