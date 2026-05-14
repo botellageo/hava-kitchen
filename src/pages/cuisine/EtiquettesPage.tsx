@@ -227,6 +227,43 @@ export default function EtiquettesPage() {
                     )}
                   </p>
                 )}
+
+                {templates.length > 0 && (
+                  <div className="mt-3">
+                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                      Sélection rapide
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {templates.map((t) => {
+                        const isSelected =
+                          productName.trim().toLowerCase() === t.nom.trim().toLowerCase();
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              setProductName(t.nom);
+                              setDlcDays(t.dlcDays);
+                              setDlcDaysTouched(false);
+                            }}
+                            className={`min-h-[52px] rounded-xl border-2 px-4 py-2 text-left transition active:scale-95 ${
+                              isSelected
+                                ? 'bg-brand border-brand text-white'
+                                : 'bg-surface hover:bg-brand-soft hover:border-brand border-gray-300 text-gray-900'
+                            }`}
+                          >
+                            <div className="text-sm leading-tight font-bold">{t.nom}</div>
+                            <div
+                              className={`text-xs ${isSelected ? 'text-white/85' : 'text-gray-500'}`}
+                            >
+                              DLC + {t.dlcDays} j
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
