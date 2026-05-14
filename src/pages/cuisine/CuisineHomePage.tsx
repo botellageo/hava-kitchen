@@ -1,9 +1,10 @@
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useRestaurant } from '@/hooks/useRestaurant';
 import { useCuisinierSession } from '@/hooks/useCuisinierSession';
+import { PairingQR } from '@/components/cuisine/PairingQR';
 
 export default function CuisineHomePage() {
-  const { restaurant } = useRestaurant();
+  const { restaurant, restaurantId } = useRestaurant();
   const { cuisinier, clearSession } = useCuisinierSession();
   const navigate = useNavigate();
 
@@ -43,13 +44,11 @@ export default function CuisineHomePage() {
                 {initials}
               </div>
               <span className="text-sm font-semibold text-gray-900">{cuisinier.prenom}</span>
-              <span
-                aria-hidden
-                title="QR pairing téléphone — disponible bientôt"
-                className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-gray-300 text-[10px] text-gray-400"
-              >
-                QR
-              </span>
+              {restaurantId && (
+                <span className="ml-1">
+                  <PairingQR restaurantId={restaurantId} cuisinierId={cuisinier.id} />
+                </span>
+              )}
             </div>
 
             <button
