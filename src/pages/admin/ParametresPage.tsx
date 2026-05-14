@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useRestaurant } from '@/hooks/useRestaurant';
 import { useToast } from '@/hooks/useToast';
 import { isValidPinFormat } from '@/lib/pin';
+import { PinInput } from '@/components/ui/PinInput';
 
 export default function ParametresPage() {
   const { restaurant, verifyManagerPin, updateManagerPin } = useRestaurant();
@@ -96,42 +97,13 @@ function ChangeManagerPinModal({
       <div className="shadow-modal w-full max-w-md rounded-2xl bg-white p-6">
         <h2 className="text-brand-darker mb-4 text-lg font-bold">Modifier le PIN gérant</h2>
         <form onSubmit={handleSubmit} className="space-y-3" noValidate>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-700">Ancien PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="\d{4,6}"
-              autoFocus
-              value={oldPin}
-              onChange={(e) => setOldPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-xl tracking-[0.4em] focus:outline-2"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-700">Nouveau PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="\d{4,6}"
-              value={newPin}
-              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-xl tracking-[0.4em] focus:outline-2"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-700">
-              Confirme le nouveau PIN
-            </label>
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="\d{4,6}"
-              value={newPinConfirm}
-              onChange={(e) => setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-xl tracking-[0.4em] focus:outline-2"
-            />
-          </div>
+          <PinInput label="Ancien PIN" value={oldPin} onChange={setOldPin} autoFocus />
+          <PinInput label="Nouveau PIN" value={newPin} onChange={setNewPin} />
+          <PinInput
+            label="Confirme le nouveau PIN"
+            value={newPinConfirm}
+            onChange={setNewPinConfirm}
+          />
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

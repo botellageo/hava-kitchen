@@ -4,6 +4,7 @@ import { useRestaurant } from '@/hooks/useRestaurant';
 import { useCuisinierSession } from '@/hooks/useCuisinierSession';
 import { PairingQR } from '@/components/cuisine/PairingQR';
 import { AppLogo } from '@/components/ui/AppLogo';
+import { getInitials } from '@/lib/initials';
 
 export default function CuisineHomePage() {
   const { user, signOut } = useAuth();
@@ -15,7 +16,7 @@ export default function CuisineHomePage() {
     return <Navigate to="/cuisine" replace />;
   }
 
-  const initials = `${cuisinier.prenom.charAt(0)}${cuisinier.nom.charAt(0)}`.toUpperCase();
+  const initials = getInitials(cuisinier.prenom, cuisinier.nom);
 
   async function handleLogout() {
     // Sur le téléphone du cuisinier (authentifié via custom token CF avec

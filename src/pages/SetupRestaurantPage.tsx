@@ -5,6 +5,7 @@ import { useRestaurant } from '@/hooks/useRestaurant';
 import { useToast } from '@/hooks/useToast';
 import { isValidPinFormat } from '@/lib/pin';
 import { AppLogo } from '@/components/ui/AppLogo';
+import { PinInput } from '@/components/ui/PinInput';
 
 type Step = 'resto' | 'pin';
 
@@ -159,43 +160,22 @@ export default function SetupRestaurantPage() {
               cuisine sans repasser par l'admin. Note-le bien, il est différent de ton mot de passe.
             </p>
 
-            <div>
-              <label htmlFor="pin" className="mb-1 block text-sm font-semibold text-gray-700">
-                PIN gérant (4 à 6 chiffres)
-              </label>
-              <input
-                id="pin"
-                type="password"
-                inputMode="numeric"
-                pattern="\d{4,6}"
-                autoComplete="new-password"
-                required
-                autoFocus
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-2xl tracking-[0.5em] focus:outline-2 focus:-outline-offset-1"
-              />
-            </div>
+            <PinInput
+              id="pin"
+              label="PIN gérant (4 à 6 chiffres)"
+              value={pin}
+              onChange={setPin}
+              required
+              autoFocus
+            />
 
-            <div>
-              <label
-                htmlFor="pinConfirm"
-                className="mb-1 block text-sm font-semibold text-gray-700"
-              >
-                Confirme le PIN
-              </label>
-              <input
-                id="pinConfirm"
-                type="password"
-                inputMode="numeric"
-                pattern="\d{4,6}"
-                autoComplete="new-password"
-                required
-                value={pinConfirm}
-                onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-2xl tracking-[0.5em] focus:outline-2 focus:-outline-offset-1"
-              />
-            </div>
+            <PinInput
+              id="pinConfirm"
+              label="Confirme le PIN"
+              value={pinConfirm}
+              onChange={setPinConfirm}
+              required
+            />
 
             {error && (
               <div

@@ -1,3 +1,5 @@
+import { getInitials } from '@/lib/initials';
+
 interface CuisinierCardProps {
   prenom: string;
   nom: string;
@@ -6,7 +8,7 @@ interface CuisinierCardProps {
 }
 
 export function CuisinierCard({ prenom, nom, onClick, disabled = false }: CuisinierCardProps) {
-  const initials = `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
+  const initials = getInitials(prenom, nom);
   return (
     <button
       type="button"
