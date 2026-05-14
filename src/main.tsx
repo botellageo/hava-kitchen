@@ -5,6 +5,7 @@ import './index.css';
 import App from './App.tsx';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { CuisinierSessionProvider } from '@/contexts/CuisinierSessionProvider';
 import { ToastProvider } from '@/contexts/ToastProvider';
 import { initSentry } from '@/lib/sentry';
 
@@ -18,9 +19,11 @@ createRoot(root).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
+          <CuisinierSessionProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </CuisinierSessionProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
