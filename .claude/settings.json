@@ -1,0 +1,75 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "Bash(git *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rm *)",
+      "Bash(find *)",
+      "Bash(sort *)",
+      "Bash(grep *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(echo *)",
+      "Bash(chmod *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(pnpm *)",
+      "Bash(yarn *)",
+      "Bash(firebase *)",
+      "Bash(tsc *)",
+      "Bash(vite *)",
+      "Bash(prettier *)",
+      "Bash(eslint *)",
+      "Bash(vitest *)",
+      "Bash(robocopy *)"
+    ]
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== CONTEXTE PRE-COMPACTION ===' && echo 'Projet: pms-midi5 — PMS HACCP pour restaurant Midi 5 (JB)' && echo 'Stack: Vite + React 19 + TypeScript strict + Firebase 12 + Tailwind 3 + Zod' && echo 'Owner: Geoffrey, solo dev (front + back + rules + CF)' && echo 'Firebase project: hava-kitchen | Emulator par défaut en dev (VITE_USE_EMULATOR=true)' && echo 'Garde-fous: TS strict, Zod schemas, parseDoc(), ErrorBoundary, Sentry, Husky+lint-staged, Rules immutables HACCP' && echo 'Skills: /feature (challenge+plan) /review (avant commit) /audit (3 agents par type bug) /deep-audit /brief-status /retrospective /update-docs /deploy-firebase' && echo 'Rules: .claude/rules/ (firebase-conventions, security, testing, react-conventions, haccp-domain)' && echo 'Hooks: PostToolUse(prettier sur ts/tsx/json/css/md), PreToolUse Bash(pre-git-check.sh = typecheck + scan secrets + no force-push main)' && echo 'HACCP: relevés IMMUTABLES (allow update,delete: if false). Concurrent: ePackPro.' && echo 'Anti-hallucination: agents par TYPE DE BUG, pas par rôle. Vérificateur élimine faux positifs.' && echo '==================================='"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo \"$TOOL_INPUT\" 2>/dev/null | grep -oP '\"file_path\"\\s*:\\s*\"\\K[^\"]+' || true); if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(js|jsx|ts|tsx|json|css|md)$'; then npx prettier --write \"$FILE\" 2>/dev/null; fi; exit 0",
+            "statusMessage": "Auto-formatting..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-git-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
