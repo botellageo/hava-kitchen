@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    function isStaff() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager', 'Staff'];
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // users — profil utilisateur (admin JB + employés)
+    // ─────────────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // organisations — config restaurant (1 seule org = Midi 5)
+    // ─────────────────────────────────────────────────────────
+    match /organisations/{orgId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // releves_temperature — données HACCP critiques
+    // Tout staff peut écrire, personne ne peut modifier/supprimer un relevé
+    // (traçabilité immutable)
+    // ─────────────────────────────────────────────────────────
+    match /releves_temperature/{releveId} {
+      allow read: if isStaff();
+      allow create: if isStaff()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.keys().hasAll(['temperature', 'equipement', 'createdAt', 'createdBy']);
+      allow update, delete: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Par défaut : tout bloquer
+    // ─────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
