@@ -8,3 +8,4 @@
 export * from './common';
 export * from './restaurant';
 export * from './cuisinier';
+export * from './cuisinierSession';

@@ -5,25 +5,14 @@ import {
   type CuisinierSession,
   type CuisinierSessionContextValue,
 } from './CuisinierSessionContext';
+import { cuisinierSessionSchema } from '@/lib/schemas';
 
 function loadFromStorage(): CuisinierSession | null {
   try {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      'id' in parsed &&
-      typeof (parsed as { id: unknown }).id === 'string' &&
-      'prenom' in parsed &&
-      typeof (parsed as { prenom: unknown }).prenom === 'string' &&
-      'nom' in parsed &&
-      typeof (parsed as { nom: unknown }).nom === 'string'
-    ) {
-      return parsed as CuisinierSession;
-    }
-    return null;
+    const parsed = cuisinierSessionSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }

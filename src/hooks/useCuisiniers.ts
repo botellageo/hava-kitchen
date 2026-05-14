@@ -79,10 +79,15 @@ export function useCuisiniers(restaurantId: string | null): UseCuisiniersResult 
 
   const addCuisinier: UseCuisiniersResult['addCuisinier'] = async ({ prenom, nom, pin }) => {
     const rid = requireResto();
+    const cleanPrenom = prenom.trim();
+    const cleanNom = nom.trim();
+    if (!cleanPrenom || !cleanNom) {
+      throw new Error('Prénom et nom requis');
+    }
     const { hash, salt } = await hashPin(pin);
     const ref = await addDoc(collection(db, 'restaurants', rid, 'cuisiniers'), {
-      prenom: prenom.trim(),
-      nom: nom.trim(),
+      prenom: cleanPrenom,
+      nom: cleanNom,
       pinHash: hash,
       pinSalt: salt,
       actif: true,
