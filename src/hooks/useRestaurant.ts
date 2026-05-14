@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -9,6 +10,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
 import { db } from '@/lib/firebase';
 import { parseDoc } from '@/lib/firestore';
 import { restaurantSchema, type Restaurant } from '@/lib/schemas';
@@ -37,19 +39,29 @@ export function useRestaurant(): UseRestaurantResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const load = async (uid: string | null) => {
+  const load = async (currentUser: User | null) => {
     setLoading(true);
     setError(null);
-    if (!uid) {
+    if (!currentUser) {
       setRestaurant(null);
       setLoading(false);
       return;
     }
     try {
-      const q = query(collection(db, 'restaurants'), where('ownerUid', '==', uid));
-      const snap = await getDocs(q);
-      const first = snap.docs[0];
-      setRestaurant(first ? parseDoc(first, restaurantSchema) : null);
+      // Si l'utilisateur a un claim restaurantId (custom token cuisinier),
+      // on récupère directement le doc resto par id. Sinon (gérant) on query par ownerUid.
+      const tokenResult = await currentUser.getIdTokenResult();
+      const claimRid = tokenResult.claims['restaurantId'];
+      if (typeof claimRid === 'string' && claimRid.length > 0) {
+        const ref = doc(db, 'restaurants', claimRid);
+        const snap = await getDoc(ref);
+        setRestaurant(snap.exists() ? parseDoc(snap, restaurantSchema) : null);
+      } else {
+        const q = query(collection(db, 'restaurants'), where('ownerUid', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        const first = snap.docs[0];
+        setRestaurant(first ? parseDoc(first, restaurantSchema) : null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Erreur de chargement'));
     } finally {
@@ -61,7 +73,7 @@ export function useRestaurant(): UseRestaurantResult {
     // Sync du state avec la session Firebase Auth : pattern légitime pour
     // (re)charger le restaurant à chaque changement d'utilisateur.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load(user?.uid ?? null);
+    void load(user);
   }, [user]);
 
   const createRestaurant: UseRestaurantResult['createRestaurant'] = async ({
@@ -83,7 +95,7 @@ export function useRestaurant(): UseRestaurantResult {
       updatedAt: serverTimestamp(),
     };
     await setDoc(ref, data);
-    await load(user.uid);
+    await load(user);
     return ref.id;
   };
 
@@ -91,7 +103,7 @@ export function useRestaurant(): UseRestaurantResult {
     if (!restaurant) throw new Error('Aucun restaurant chargé');
     const ref = doc(db, 'restaurants', restaurant.id);
     await updateDoc(ref, { ...partial, updatedAt: serverTimestamp() });
-    if (user) await load(user.uid);
+    if (user) await load(user);
   };
 
   const updateManagerPin: UseRestaurantResult['updateManagerPin'] = async (newPin) => {
@@ -103,7 +115,7 @@ export function useRestaurant(): UseRestaurantResult {
       managerPinSalt: salt,
       updatedAt: serverTimestamp(),
     });
-    if (user) await load(user.uid);
+    if (user) await load(user);
   };
 
   const verifyManagerPin: UseRestaurantResult['verifyManagerPin'] = async (pin) => {
@@ -112,7 +124,7 @@ export function useRestaurant(): UseRestaurantResult {
   };
 
   const reload = async () => {
-    if (user) await load(user.uid);
+    await load(user);
   };
 
   return {

@@ -16,15 +16,19 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/restaurants/$(rid)).data.ownerUid == request.auth.uid;
     }
 
+    // Cuisinier authentifié via custom token CF avec claim restaurantId
+    function isCuisinierOfResto(rid) {
+      return isSignedIn() && request.auth.token.restaurantId == rid;
+    }
+
     // ─────────────────────────────────────────────────────────
     // restaurants/{rid} — un restaurant par gérant
     // ─────────────────────────────────────────────────────────
     match /restaurants/{rid} {
 
-      // Read : seul le owner du resto (it.1).
-      // It.2 : étendre pour cuisinier authentifié via custom claim restaurantId.
-      allow read: if isSignedIn()
-        && resource.data.ownerUid == request.auth.uid;
+      // Read : owner du resto OU cuisinier authentifié via custom claim restaurantId.
+      allow read: if (isSignedIn() && resource.data.ownerUid == request.auth.uid)
+        || isCuisinierOfResto(rid);
 
       // Create : authentifié + se déclare comme owner (anti-impersonation).
       allow create: if isSignedIn()

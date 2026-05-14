@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
+import PairPage from '@/pages/PairPage';
 import SetupRestaurantPage from '@/pages/SetupRestaurantPage';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import DashboardPage from '@/pages/admin/DashboardPage';
@@ -14,6 +15,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/pair" element={<PairPage />} />
       <Route
         path="/setup"
         element={

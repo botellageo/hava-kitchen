@@ -1,9 +1,11 @@
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { useRestaurant } from '@/hooks/useRestaurant';
 import { useCuisinierSession } from '@/hooks/useCuisinierSession';
 import { PairingQR } from '@/components/cuisine/PairingQR';
 
 export default function CuisineHomePage() {
+  const { user, signOut } = useAuth();
   const { restaurant, restaurantId } = useRestaurant();
   const { cuisinier, clearSession } = useCuisinierSession();
   const navigate = useNavigate();
@@ -14,7 +16,20 @@ export default function CuisineHomePage() {
 
   const initials = `${cuisinier.prenom.charAt(0)}${cuisinier.nom.charAt(0)}`.toUpperCase();
 
-  function handleLogout() {
+  async function handleLogout() {
+    // Sur le téléphone du cuisinier (authentifié via custom token CF avec
+    // claim role=cuisinier), on signOut Firebase Auth pour ne pas garder
+    // une session côté tél. Sur l'iPad (auth gérant), on garde JB connecté.
+    if (user) {
+      try {
+        const tokenResult = await user.getIdTokenResult();
+        if (tokenResult.claims['role'] === 'cuisinier') {
+          await signOut();
+        }
+      } catch {
+        // si on n'arrive pas à lire le token, on continue
+      }
+    }
     clearSession();
     navigate('/cuisine', { replace: true });
   }
@@ -53,7 +68,7 @@ export default function CuisineHomePage() {
 
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
             >
               Changer d'utilisateur
