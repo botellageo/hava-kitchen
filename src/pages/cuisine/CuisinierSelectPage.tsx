@@ -7,15 +7,19 @@ import { useToast } from '@/hooks/useToast';
 import { CuisinierCard } from '@/components/cuisine/CuisinierCard';
 import { AddCuisinierTile } from '@/components/cuisine/AddCuisinierTile';
 import { PinKeypadModal } from '@/components/cuisine/PinKeypadModal';
+import { QuickAddCuisinierModal } from '@/components/cuisine/QuickAddCuisinierModal';
+
+type QuickAddStep = null | 'manager-pin' | 'form';
 
 export default function CuisinierSelectPage() {
-  const { restaurant, restaurantId } = useRestaurant();
-  const { cuisiniers, loading, verifyCuisinierPin } = useCuisiniers(restaurantId);
+  const { restaurant, restaurantId, verifyManagerPin } = useRestaurant();
+  const { cuisiniers, loading, verifyCuisinierPin, addCuisinier } = useCuisiniers(restaurantId);
   const { cuisinier, setCuisinier } = useCuisinierSession();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [pinTarget, setPinTarget] = useState<CuisinierDoc | null>(null);
+  const [quickAdd, setQuickAdd] = useState<QuickAddStep>(null);
 
   // Si déjà loggué en cuisinier, on saute la sélection
   if (cuisinier) {
@@ -66,14 +70,7 @@ export default function CuisinierSelectPage() {
                 onClick={() => setPinTarget(c)}
               />
             ))}
-            <AddCuisinierTile
-              onClick={() =>
-                showToast({
-                  kind: 'info',
-                  message: 'Création rapide disponible bientôt.',
-                })
-              }
-            />
+            <AddCuisinierTile onClick={() => setQuickAdd('manager-pin')} />
           </div>
         )}
       </main>
@@ -96,6 +93,37 @@ export default function CuisinierSelectPage() {
           showToast({ kind: 'success', message: `Bonjour ${pinTarget.prenom}` });
           navigate('/cuisine/home', { replace: true });
           return { ok: true };
+        }}
+      />
+
+      <PinKeypadModal
+        open={quickAdd === 'manager-pin'}
+        title="PIN gérant"
+        subtitle="Pour ajouter un cuisinier sans repasser par l'admin."
+        onCancel={() => setQuickAdd(null)}
+        onSubmit={async (pin) => {
+          const ok = await verifyManagerPin(pin);
+          if (!ok) return { ok: false, message: 'PIN gérant incorrect.' };
+          setQuickAdd('form');
+          return { ok: true };
+        }}
+      />
+
+      <QuickAddCuisinierModal
+        open={quickAdd === 'form'}
+        onCancel={() => setQuickAdd(null)}
+        onSubmit={async ({ prenom, nom, pin }) => {
+          try {
+            await addCuisinier({ prenom, nom, pin });
+            setQuickAdd(null);
+            showToast({ kind: 'success', message: `${prenom} ajouté.` });
+            return { ok: true };
+          } catch (err) {
+            return {
+              ok: false,
+              message: err instanceof Error ? err.message : 'Création impossible.',
+            };
+          }
         }}
       />
     </div>
