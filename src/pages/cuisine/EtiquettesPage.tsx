@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/useToast';
 import { AppLogo } from '@/components/ui/AppLogo';
 import { Combobox } from '@/components/ui/Combobox';
 import { EtiquettePreview } from '@/components/cuisine/EtiquettePreview';
+import { ProductListModal } from '@/components/cuisine/ProductListModal';
 import { calculateDlc, generateEtiquettePdf } from '@/lib/generateEtiquettePdf';
 
 function todayIso(): string {
@@ -38,6 +39,7 @@ export default function EtiquettesPage() {
   const [lot, setLot] = useState('');
   const [qte, setQte] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   const matchedTemplate = useMemo(
     () => findMatch(templates, productName),
@@ -189,18 +191,31 @@ export default function EtiquettesPage() {
                 >
                   Produit
                 </label>
-                <Combobox
-                  id="product-input"
-                  value={productName}
-                  onChange={setProductName}
-                  options={templates.map((t) => ({
-                    id: t.id,
-                    label: t.nom,
-                    hint: `DLC + ${t.dlcDays} j`,
-                  }))}
-                  placeholder="Tape ou sélectionne…"
-                  required
-                />
+                <div className="flex gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Combobox
+                      id="product-input"
+                      value={productName}
+                      onChange={setProductName}
+                      options={templates.map((t) => ({
+                        id: t.id,
+                        label: t.nom,
+                        hint: `DLC + ${t.dlcDays} j`,
+                      }))}
+                      placeholder="Tape ou sélectionne…"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setListOpen(true)}
+                    title="Voir tous les produits"
+                    aria-label="Voir tous les produits"
+                    className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-base transition hover:bg-gray-50"
+                  >
+                    📋
+                  </button>
+                </div>
                 {productName.trim() && (
                   <p className="mt-1 text-xs">
                     {matchedTemplate ? (
@@ -296,6 +311,18 @@ export default function EtiquettesPage() {
                 Imprimante Brother QL-820NWB pas encore connectée — PDF téléchargeable en attendant.
               </p>
             </form>
+
+            <ProductListModal
+              open={listOpen}
+              onClose={() => setListOpen(false)}
+              templates={templates}
+              onUpdateDlc={(pid, days) => updateTemplate(pid, { dlcDays: days })}
+              onSelect={(t) => {
+                setProductName(t.nom);
+                setDlcDays(t.dlcDays);
+                setDlcDaysTouched(false);
+              }}
+            />
 
             <div>
               <div className="mb-2 text-sm font-semibold text-gray-700">Aperçu (taille réelle)</div>
