@@ -10,6 +10,7 @@ import TemplatesPage from '@/pages/admin/TemplatesPage';
 import ParametresPage from '@/pages/admin/ParametresPage';
 import CuisinierSelectPage from '@/pages/cuisine/CuisinierSelectPage';
 import CuisineHomePage from '@/pages/cuisine/CuisineHomePage';
+import ReceptionPage from '@/pages/cuisine/ReceptionPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RequireRestaurant } from '@/components/RequireRestaurant';
 
@@ -57,6 +58,16 @@ function App() {
           <ProtectedRoute>
             <RequireRestaurant>
               <CuisineHomePage />
+            </RequireRestaurant>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cuisine/reception"
+        element={
+          <ProtectedRoute>
+            <RequireRestaurant>
+              <ReceptionPage />
             </RequireRestaurant>
           </ProtectedRoute>
         }

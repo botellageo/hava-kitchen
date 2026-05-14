@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
-  addDoc,
   collection,
+  doc,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { tryParseDoc } from '@/lib/firestore';
@@ -29,7 +30,14 @@ interface UseReceptionsResult {
   receptions: ReceptionDoc[];
   loading: boolean;
   error: Error | null;
-  createReception: (input: CreateReceptionInput) => Promise<string>;
+  /**
+   * Génère un id Firestore en local (sans write). Utile pour pré-construire
+   * le path Storage (restaurants/{rid}/receptions/{id}/photo.jpg) avant de
+   * uploader la photo, puis créer le doc avec ce même id.
+   */
+  generateReceptionId: () => string;
+  /** Crée le doc avec un id donné (immutable côté rules). */
+  createReception: (receptionId: string, input: CreateReceptionInput) => Promise<void>;
 }
 
 /**
@@ -75,8 +83,14 @@ export function useReceptions(restaurantId: string | null): UseReceptionsResult 
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [restaurantId]);
 
-  const createReception: UseReceptionsResult['createReception'] = async (input) => {
+  const generateReceptionId: UseReceptionsResult['generateReceptionId'] = () => {
     if (!restaurantId) throw new Error('Aucun restaurant courant');
+    return doc(collection(db, 'restaurants', restaurantId, 'receptions')).id;
+  };
+
+  const createReception: UseReceptionsResult['createReception'] = async (receptionId, input) => {
+    if (!restaurantId) throw new Error('Aucun restaurant courant');
+    if (!receptionId) throw new Error('receptionId requis');
     if (!input.produit.trim()) throw new Error('Produit requis');
     if (!input.photoUrl) throw new Error('Photo requise (preuve DDPP)');
     if (!input.createdBy) throw new Error('Identité cuisinier requise');
@@ -105,9 +119,8 @@ export function useReceptions(restaurantId: string | null): UseReceptionsResult 
     if (input.dlc?.trim()) payload.dlc = input.dlc.trim();
     if (input.notes?.trim()) payload.notes = input.notes.trim();
 
-    const ref = await addDoc(collection(db, 'restaurants', restaurantId, 'receptions'), payload);
-    return ref.id;
+    await setDoc(doc(db, 'restaurants', restaurantId, 'receptions', receptionId), payload);
   };
 
-  return { receptions, loading, error, createReception };
+  return { receptions, loading, error, generateReceptionId, createReception };
 }
