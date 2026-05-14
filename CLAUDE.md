@@ -38,16 +38,18 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 ## Skills disponibles
 
-| Skill              | Usage                                        | Quand                       |
-| ------------------ | -------------------------------------------- | --------------------------- |
-| `/feature`         | Challenge 4 axes + plan + exécution guidée   | Nouvelle feature            |
-| `/review`          | Scripts + agent adaptatif anti-hallucination | Avant chaque commit         |
-| `/audit`           | 3 agents par type bug + vérificateur         | Après itération             |
-| `/deep-audit`      | Audit complet du codebase                    | Avant MEP / tous les 10 it. |
-| `/brief-status`    | État projet                                  | Début de session            |
-| `/retrospective`   | Tendances N itérations                       | Tous les 10 it.             |
-| `/update-docs`     | Synchronise docs                             | Après audit                 |
-| `/deploy-firebase` | Déploiement Hosting + Rules + CF             | Après audit PASS            |
+| Skill               | Usage                                        | Quand                             |
+| ------------------- | -------------------------------------------- | --------------------------------- |
+| `/feature`          | Challenge 4 axes + plan + exécution guidée   | Nouvelle feature                  |
+| `/review`           | Scripts + agent adaptatif anti-hallucination | Avant chaque commit               |
+| `/audit`            | 3 agents par type bug + vérificateur         | Après itération                   |
+| `/deep-audit`       | Audit complet du codebase                    | Avant MEP / tous les 10 it.       |
+| `/brief-status`     | État projet                                  | Début de session                  |
+| `/retrospective`    | Tendances N itérations                       | Tous les 10 it.                   |
+| `/update-docs`      | Synchronise docs                             | Après audit                       |
+| `/deploy-firebase`  | Déploiement Hosting + Rules + CF             | Après audit PASS                  |
+| `/setup`            | Onboarding fresh clone                       | Nouveau PC ou reprise après pause |
+| `/add-module-haccp` | Bootstrap module HACCP (Zod+rule+hook+test)  | Nouveau type de relevé/document   |
 
 ## Garde-fous solo dev (déjà actifs)
 
@@ -59,6 +61,8 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 | **ErrorBoundary** (`src/components/ErrorBoundary.tsx`) | Crash React ne casse pas l'écran complet                                      |
 | **Sentry** (`src/lib/sentry.ts`)                       | Alerte si JB crashe en prod                                                   |
 | **Husky + lint-staged**                                | Pas de commit avec ESLint/Prettier KO                                         |
+| **Vitest + RTL**                                       | Tests unitaires + composants. `npm test`                                      |
+| **`@firebase/rules-unit-testing`**                     | Tests Security Rules — immutabilité HACCP validée. `npm run test:rules`       |
 | **Firestore Rules**                                    | Auth obligatoire + relevés HACCP immutables (`allow update,delete: if false`) |
 | **Firebase Emulator**                                  | Dev sans toucher la prod (`VITE_USE_EMULATOR=true`)                           |
 | **CF backup quotidien**                                | Sauvegarde Firestore 3h Europe/Paris                                          |
@@ -86,6 +90,9 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 - `docs/audit_history.md` — historique des audits
 - `docs/improvements.md` — backlog gaps
 - `src/lib/schemas/` — un fichier Zod par collection Firestore
+- `src/test/rules/` — tests Security Rules (lance via `npm run test:rules`)
+- `src/test/setup.ts` — setup global Vitest (jest-dom, cleanup)
+- `vitest.config.ts` — config Vitest (jsdom, alias @, coverage)
 - `firestore.rules` — Security Rules (déjà setup, relevés immutables)
 - `functions/src/index.ts` — Cloud Functions (backup quotidien)
 
@@ -109,7 +116,9 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 - **Itération 0** — setup initial terminé 2026-05-14
 - Squelette Vite + React 19 + TS strict + Firebase 12 OK
-- Garde-fous Zod + Sentry + Husky en place
-- Firestore Rules avec immutabilité HACCP sur `releves_temperature`
-- CF backup quotidien stub à finaliser
+- Garde-fous Zod + Sentry + Husky + Vitest + rules-unit-testing en place
+- Firestore Rules avec immutabilité HACCP sur `releves_temperature` (testée, 6 cas)
+- 10 slash commands : `/feature`, `/review`, `/audit`, `/deep-audit`, `/brief-status`, `/retrospective`, `/update-docs`, `/deploy-firebase`, `/setup`, `/add-module-haccp`
+- CF backup quotidien stub à finaliser (nécessite passage Blaze)
+- Sentry : DSN à configurer dans `.env.local` quand prêt
 - Prochaine étape : premier vrai écran HACCP (probablement relevé de température)

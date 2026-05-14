@@ -10,6 +10,10 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
     "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:rules": "firebase emulators:exec --only firestore \"vitest run src/test/rules\"",
     "preview": "vite preview",
     "prepare": "husky",
     "emulators": "firebase emulators:start"
@@ -24,10 +28,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/ui": "^4.1.6",
     "autoprefixer": "^10.5.0",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
@@ -35,13 +44,15 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
     "lint-staged": "^17.0.4",
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^4.1.6"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
