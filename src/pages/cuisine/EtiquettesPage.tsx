@@ -6,6 +6,7 @@ import { useEtiquettes } from '@/hooks/useEtiquettes';
 import { useCuisinierSession } from '@/hooks/useCuisinierSession';
 import { useToast } from '@/hooks/useToast';
 import { AppLogo } from '@/components/ui/AppLogo';
+import { Combobox } from '@/components/ui/Combobox';
 import { EtiquettePreview } from '@/components/cuisine/EtiquettePreview';
 import { calculateDlc, generateEtiquettePdf } from '@/lib/generateEtiquettePdf';
 
@@ -140,7 +141,10 @@ export default function EtiquettesPage() {
         message: `${qte} étiquette${qte > 1 ? 's' : ''} générée${qte > 1 ? 's' : ''}.`,
       });
 
-      // Reset partiel
+      // Reset complet pour préparer la prochaine étiquette
+      setProductName('');
+      setDlcDays(3);
+      setDlcDaysTouched(false);
       setLot('');
       setQte(1);
     } catch (err) {
@@ -185,31 +189,25 @@ export default function EtiquettesPage() {
                 >
                   Produit
                 </label>
-                <input
+                <Combobox
                   id="product-input"
-                  type="text"
-                  required
-                  autoComplete="off"
-                  list="product-templates-list"
                   value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
+                  onChange={setProductName}
+                  options={templates.map((t) => ({
+                    id: t.id,
+                    label: t.nom,
+                    hint: `DLC + ${t.dlcDays} j`,
+                  }))}
                   placeholder="Tape ou sélectionne…"
-                  className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
+                  required
                 />
-                <datalist id="product-templates-list">
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.nom}>
-                      DLC + {t.dlcDays} j
-                    </option>
-                  ))}
-                </datalist>
                 {productName.trim() && (
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs">
                     {matchedTemplate ? (
                       <span className="text-brand-darker">✓ Produit existant</span>
                     ) : (
                       <span className="text-info-darker">
-                        + Sera créé dans la liste à la 1<sup>ère</sup> impression
+                        + Sera ajouté à la liste à la 1<sup>ère</sup> impression
                       </span>
                     )}
                   </p>
