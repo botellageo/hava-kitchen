@@ -11,7 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { parseDoc } from '@/lib/firestore';
 import { restaurantSchema, type Restaurant } from '@/lib/schemas';
 import { hashPin, verifyPin } from '@/lib/pin';
@@ -90,13 +90,16 @@ export function useRestaurant(): UseRestaurantResult {
     adresse,
     managerPin,
   }) => {
-    if (!user) throw new Error('Non authentifié');
+    // Lit auth.currentUser direct pour éviter la race condition signUp → createRestaurant
+    // (le state `user` du hook peut être encore null entre les deux awaits).
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Non authentifié');
     if (restaurant) throw new Error('Un restaurant existe déjà pour ce compte');
     const { hash, salt } = await hashPin(managerPin);
     const ref = doc(collection(db, 'restaurants'));
     const data = {
       nom,
-      ownerUid: user.uid,
+      ownerUid: currentUser.uid,
       ...(adresse ? { adresse } : {}),
       managerPinHash: hash,
       managerPinSalt: salt,
@@ -104,7 +107,7 @@ export function useRestaurant(): UseRestaurantResult {
       updatedAt: serverTimestamp(),
     };
     await setDoc(ref, data);
-    await load(user);
+    await load(currentUser);
     return ref.id;
   };
 

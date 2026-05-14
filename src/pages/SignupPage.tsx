@@ -25,8 +25,11 @@ export default function SignupPage() {
   const [adresse, setAdresse] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Si déjà connecté (ex: refresh page après création), rediriger.
-  if (user) {
+  // Si Geoffrey arrive sur /signup déjà connecté (ex: reload), rediriger.
+  // MAIS si on est en cours de wizard (step === 'resto' | 'pin'), on laisse
+  // le flow finir — sinon le Navigate interromprait createRestaurant juste
+  // après signUp à l'étape PIN.
+  if (user && step === 'account') {
     return <Navigate to="/admin" replace />;
   }
 
