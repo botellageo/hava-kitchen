@@ -1,29 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLogo } from '@/components/ui/AppLogo';
+import { translateAuthError } from '@/lib/firebaseAuthErrors';
 
 type LocationState = { from?: { pathname?: string } } | null;
-
-function translateAuthError(code: string): string {
-  switch (code) {
-    case 'auth/invalid-email':
-      return 'Adresse email invalide.';
-    case 'auth/user-disabled':
-      return 'Ce compte est désactivé.';
-    case 'auth/user-not-found':
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-      return 'Email ou mot de passe incorrect.';
-    case 'auth/too-many-requests':
-      return 'Trop de tentatives. Réessaie dans quelques minutes.';
-    case 'auth/network-request-failed':
-      return 'Pas de connexion internet.';
-    default:
-      return 'Connexion impossible. Réessaie.';
-  }
-}
 
 export default function LoginPage() {
   const { user, signIn } = useAuth();
@@ -116,6 +98,13 @@ export default function LoginPage() {
             {submitting ? 'Connexion…' : 'Se connecter'}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Pas encore de compte ?{' '}
+          <Link to="/signup" className="text-brand-darker font-semibold hover:underline">
+            S'inscrire
+          </Link>
+        </p>
       </div>
     </div>
   );

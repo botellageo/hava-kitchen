@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut as fbSignOut,
@@ -25,6 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signIn: async (email, password) => {
       await signInWithEmailAndPassword(auth, email, password);
+    },
+    signUp: async (email, password) => {
+      await createUserWithEmailAndPassword(auth, email, password);
     },
     signOut: async () => {
       await fbSignOut(auth);
