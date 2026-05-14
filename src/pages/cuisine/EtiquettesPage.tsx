@@ -127,10 +127,15 @@ export default function EtiquettesPage() {
           <div className="text-sm text-gray-500">Chargement des produits…</div>
         ) : templates.length === 0 ? (
           <div className="bg-surface rounded-card border-2 border-dashed border-gray-300 p-8 text-center">
-            <p className="text-sm text-gray-500">Pas encore de produit configuré.</p>
-            <p className="mt-1 text-sm text-gray-400">
-              Demande au gérant d'en ajouter depuis l'espace gestion (Admin → Produits).
-            </p>
+            <p className="mb-1 text-sm text-gray-500">Pas encore de produit configuré.</p>
+            <p className="mb-4 text-sm text-gray-400">Ajoute ton premier produit.</p>
+            <button
+              type="button"
+              onClick={() => setEditingTemplate({ mode: 'add' })}
+              className="bg-brand hover:bg-brand-dark rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition"
+            >
+              + Ajouter un produit
+            </button>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
