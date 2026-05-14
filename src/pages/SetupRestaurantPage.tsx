@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRestaurant } from '@/hooks/useRestaurant';
 import { useToast } from '@/hooks/useToast';
 import { isValidPinFormat } from '@/lib/pin';
+import { AppLogo } from '@/components/ui/AppLogo';
 
 type Step = 'resto' | 'pin';
 
@@ -66,14 +67,8 @@ export default function SetupRestaurantPage() {
   return (
     <div className="bg-surface-softer flex min-h-screen items-center justify-center p-4">
       <div className="bg-surface shadow-card w-full max-w-lg rounded-2xl p-8 md:p-12">
-        <div className="mb-2 flex items-center gap-3">
-          <div className="from-brand to-brand-dark flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white">
-            M5
-          </div>
-          <div>
-            <div className="text-brand-darker text-lg leading-tight font-bold">Midi 5</div>
-            <div className="text-xs font-medium tracking-widest text-gray-500">SUIVI HYGIÈNE</div>
-          </div>
+        <div className="mb-2">
+          <AppLogo />
         </div>
 
         <div className="mb-6 flex items-center gap-2 text-xs text-gray-500">

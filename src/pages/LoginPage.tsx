@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/hooks/useAuth';
+import { AppLogo } from '@/components/ui/AppLogo';
 
 type LocationState = { from?: { pathname?: string } } | null;
 
@@ -58,14 +59,8 @@ export default function LoginPage() {
   return (
     <div className="bg-surface-softer flex min-h-screen items-center justify-center p-4">
       <div className="bg-surface shadow-card w-full max-w-md rounded-2xl p-8 md:p-12">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="from-brand to-brand-dark flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white">
-            M5
-          </div>
-          <div>
-            <div className="text-brand-darker text-lg font-bold leading-tight">Midi 5</div>
-            <div className="text-xs font-medium tracking-widest text-gray-500">SUIVI HYGIÈNE</div>
-          </div>
+        <div className="mb-8">
+          <AppLogo />
         </div>
 
         <h1 className="text-brand-darker mb-1 text-xl font-bold">Connexion</h1>

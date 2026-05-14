@@ -8,6 +8,7 @@ import { collection, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { tryParseDoc } from '@/lib/firestore';
 import { cuisinierSchema } from '@/lib/schemas';
+import { AppLogo } from '@/components/ui/AppLogo';
 
 type Status = 'pending' | 'success' | 'error';
 
@@ -101,9 +102,7 @@ export default function PairPage() {
     <div className="bg-surface-softer flex min-h-screen items-center justify-center p-4">
       <div className="bg-surface shadow-card w-full max-w-md rounded-2xl p-8 text-center">
         <div className="mb-4 flex justify-center">
-          <div className="from-brand to-brand-dark flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-base font-bold text-white">
-            M5
-          </div>
+          <AppLogo showBrand={false} />
         </div>
         {status === 'pending' && (
           <>

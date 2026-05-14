@@ -8,6 +8,7 @@ import { CuisinierCard } from '@/components/cuisine/CuisinierCard';
 import { AddCuisinierTile } from '@/components/cuisine/AddCuisinierTile';
 import { PinKeypadModal } from '@/components/cuisine/PinKeypadModal';
 import { QuickAddCuisinierModal } from '@/components/cuisine/QuickAddCuisinierModal';
+import { AppLogo } from '@/components/ui/AppLogo';
 
 type QuickAddStep = null | 'manager-pin' | 'form';
 
@@ -32,19 +33,7 @@ export default function CuisinierSelectPage() {
     <div className="bg-surface-softer min-h-screen">
       <header className="bg-surface border-b border-gray-200">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-          <div className="flex items-center gap-3">
-            <div className="from-brand to-brand-dark flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-sm font-bold text-white">
-              M5
-            </div>
-            <div>
-              <div className="text-brand-darker text-base leading-tight font-bold">
-                {restaurant?.nom ?? 'Midi 5'}
-              </div>
-              <div className="text-[10px] font-medium tracking-widest text-gray-500">
-                SUIVI HYGIÈNE
-              </div>
-            </div>
-          </div>
+          <AppLogo size="sm" brandName={restaurant?.nom ?? 'Midi 5'} />
           <Link
             to="/admin"
             className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
