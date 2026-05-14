@@ -35,6 +35,25 @@
 
 - `tailwind.config.js` : `brand.soft`/`brand.softer` peu discriminants ; `alert.bad` (red) dans la catégorie `alert` (amber) peut être renommé `danger` pour clarté sémantique. Pas bloquant.
 
+## Issus de l'Audit #1 (it.1, B+)
+
+### Polish / qualité code (it.2)
+
+- **Extraire `<AppLogo />`** — header logo M5 + brand "Midi 5 / SUIVI HYGIÈNE" répété dans 6 pages (LoginPage, SetupRestaurantPage, AdminLayout, CuisinierSelectPage, CuisineHomePage, PairPage).
+- **Extraire `<PinInput />`** — inputs password numérique 4-6 chiffres avec tracking + outline-brand répétés dans 3 fichiers (CuisinierFormModal, ParametresPage, QuickAddCuisinierModal).
+- **Extraire `<Modal />`** — pattern fixed inset-0 bg-black/40 + max-w-md rounded-2xl shadow-modal répété dans 3 modals (CuisinierFormModal, ChangeManagerPinModal, QuickAddCuisinierModal, PinKeypadModal, PairingQRModal).
+- **Helper `getInitials(prenom, nom)`** — calcul `${p.charAt(0)}${n.charAt(0)}.toUpperCase()` dupliqué dans CuisinierCard.tsx et CuisineHomePage.tsx.
+- **Split `CuisiniersPage.tsx`** (296 lignes) — extraire `CuisinierFormModal` dans `src/components/admin/CuisinierFormModal.tsx`.
+- **Split `SetupRestaurantPage.tsx`** (236 lignes) — extraire les 2 étapes du wizard en sous-composants.
+- **Factoriser nav AdminLayout** — desktop + mobile dupliquent les NavLink. Définir un tableau et map.
+
+### Robustesse runtime
+
+- **ToastProvider** : cleanup tous les timers au unmount du Provider (`useEffect` retour cleanup qui itère sur `timers.current`). Mineur car Provider racine rarement démonté.
+- **Validation Zod côté client** avant les writes Firestore dans `useRestaurant.createRestaurant`/`updateRestaurant` et `useCuisiniers.addCuisinier`. Les rules font le filet mais best practice Zod = validation côté client aussi.
+- **`CuisinierSessionProvider`** : remplacer la validation inline localStorage par un `cuisinierSessionSchema.safeParse()` (Zod).
+- **`CuisinierPatch` index signature** — documenter le workaround ou typer plus strictement via la signature `UpdateData<...>` de Firestore.
+
 ## Roadmap modules HACCP (futurs)
 
 - Module **Températures** (sondes auto + graph 7j + saisie manuelle de fallback) — it.3+

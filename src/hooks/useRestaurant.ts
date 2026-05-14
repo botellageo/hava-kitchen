@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   collection,
   doc,
@@ -38,34 +38,43 @@ export function useRestaurant(): UseRestaurantResult {
   const [restaurant, setRestaurant] = useState<(Restaurant & { id: string }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Compteur de génération pour annuler les setStates d'un load() obsolète
+  // (cas : user change pendant un load en cours, on évite d'écraser le state du nouveau user).
+  const loadGenRef = useRef(0);
 
   const load = async (currentUser: User | null) => {
+    const myGen = ++loadGenRef.current;
+    const isStale = () => loadGenRef.current !== myGen;
+
     setLoading(true);
     setError(null);
     if (!currentUser) {
+      if (isStale()) return;
       setRestaurant(null);
       setLoading(false);
       return;
     }
     try {
-      // Si l'utilisateur a un claim restaurantId (custom token cuisinier),
-      // on récupère directement le doc resto par id. Sinon (gérant) on query par ownerUid.
       const tokenResult = await currentUser.getIdTokenResult();
+      if (isStale()) return;
       const claimRid = tokenResult.claims['restaurantId'];
       if (typeof claimRid === 'string' && claimRid.length > 0) {
         const ref = doc(db, 'restaurants', claimRid);
         const snap = await getDoc(ref);
+        if (isStale()) return;
         setRestaurant(snap.exists() ? parseDoc(snap, restaurantSchema) : null);
       } else {
         const q = query(collection(db, 'restaurants'), where('ownerUid', '==', currentUser.uid));
         const snap = await getDocs(q);
+        if (isStale()) return;
         const first = snap.docs[0];
         setRestaurant(first ? parseDoc(first, restaurantSchema) : null);
       }
     } catch (err) {
+      if (isStale()) return;
       setError(err instanceof Error ? err : new Error('Erreur de chargement'));
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   };
 

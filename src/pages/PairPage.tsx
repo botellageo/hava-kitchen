@@ -38,8 +38,8 @@ export default function PairPage() {
     /* eslint-enable react-hooks/set-state-in-effect */
 
     void (async () => {
+      let customTokenSigned = false;
       try {
-        // Anonymous sign-in pour pouvoir appeler la CF (la CF accepte non-auth aussi mais Firebase Functions exige une session pour onCall en pratique)
         if (!auth.currentUser) {
           await signInAnonymously(auth);
         }
@@ -51,8 +51,8 @@ export default function PairPage() {
         const result = await redeem({ restaurantId: rid, tokenId });
 
         const { user } = await signInWithCustomToken(auth, result.data.customToken);
+        customTokenSigned = true;
 
-        // Charger le doc cuisinier pour récupérer prénom/nom (claim ne les contient pas)
         const tokenResult = await user.getIdTokenResult(true);
         const cuisinierId = tokenResult.claims['cuisinierId'];
         if (typeof cuisinierId !== 'string') {
@@ -68,6 +68,16 @@ export default function PairPage() {
         setCuisinier({ id: parsed.id, prenom: parsed.prenom, nom: parsed.nom });
         setStatus('success');
       } catch (err) {
+        // Rollback : si on s'était authentifié avec le custom token mais que la
+        // suite a échoué (getDoc cuisinier, etc.), on déconnecte pour éviter un
+        // état Firebase Auth incohérent avec la session app (cuisinier déconnecté).
+        if (customTokenSigned && auth.currentUser) {
+          try {
+            await auth.signOut();
+          } catch {
+            // best effort
+          }
+        }
         const fnErr = err as FunctionsError;
         const message =
           fnErr.code === 'functions/deadline-exceeded'
