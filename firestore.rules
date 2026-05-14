@@ -57,6 +57,38 @@ service cloud.firestore {
       match /pairingTokens/{tid} {
         allow read, write: if false;
       }
+
+      // ─────────────────────────────────────────────────────
+      // sub: productTemplates/{pid} — config gérant (DLC + N jours)
+      // Read partagé (owner + cuisinier) car le cuisinier choisit le template
+      // côté UI Étiquettes DLC. Write réservé au gérant.
+      // ─────────────────────────────────────────────────────
+      match /productTemplates/{pid} {
+        allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow create, update, delete: if isRestoOwner(rid);
+      }
+
+      // ─────────────────────────────────────────────────────
+      // sub: receptions/{recId} — HACCP immutable (preuve DDPP 3 ans)
+      // Create par owner ou cuisinier authentifié. Champs obligatoires
+      // garantissent l'intégrité de la preuve.
+      // ─────────────────────────────────────────────────────
+      match /receptions/{recId} {
+        allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow create: if (isRestoOwner(rid) || isCuisinierOfResto(rid))
+          && request.resource.data.keys().hasAll(['produit', 'photoUrl', 'createdAt', 'createdBy']);
+        allow update, delete: if false;
+      }
+
+      // ─────────────────────────────────────────────────────
+      // sub: etiquettes/{eid} — HACCP immutable (trace des étiquettes générées)
+      // ─────────────────────────────────────────────────────
+      match /etiquettes/{eid} {
+        allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow create: if (isRestoOwner(rid) || isCuisinierOfResto(rid))
+          && request.resource.data.keys().hasAll(['produit', 'prodDate', 'dlc', 'qte', 'createdAt', 'createdBy']);
+        allow update, delete: if false;
+      }
     }
 
     // ─────────────────────────────────────────────────────────
