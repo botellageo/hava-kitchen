@@ -1,7 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import SetupRestaurantPage from '@/pages/SetupRestaurantPage';
-import { Home } from '@/pages/Home';
+import AdminLayout from '@/pages/admin/AdminLayout';
+import DashboardPage from '@/pages/admin/DashboardPage';
+import CuisiniersPage from '@/pages/admin/CuisiniersPage';
+import ParametresPage from '@/pages/admin/ParametresPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RequireRestaurant } from '@/components/RequireRestaurant';
 
@@ -18,15 +21,18 @@ function App() {
         }
       />
       <Route
-        path="/admin"
         element={
           <ProtectedRoute>
             <RequireRestaurant>
-              <Home />
+              <AdminLayout />
             </RequireRestaurant>
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/admin" element={<DashboardPage />} />
+        <Route path="/admin/cuisiniers" element={<CuisiniersPage />} />
+        <Route path="/admin/parametres" element={<ParametresPage />} />
+      </Route>
       <Route path="/" element={<Navigate to="/admin" replace />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
