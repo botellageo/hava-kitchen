@@ -4,12 +4,30 @@ import { useRestaurant } from '@/hooks/useRestaurant';
 import { useToast } from '@/hooks/useToast';
 import { AppLogo } from '@/components/ui/AppLogo';
 
+const NAV_ITEMS = [
+  { to: '/admin', label: 'Accueil', end: true },
+  { to: '/admin/cuisiniers', label: 'Cuisiniers', end: false },
+  { to: '/admin/parametres', label: 'Paramètres', end: false },
+];
+
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
     isActive
       ? 'bg-brand-soft text-brand-darker'
       : 'text-gray-600 hover:bg-gray-50 hover:text-brand-darker'
   }`;
+
+function AdminNav({ className }: { className?: string }) {
+  return (
+    <nav className={className}>
+      {NAV_ITEMS.map((item) => (
+        <NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
 
 export default function AdminLayout() {
   const { user, signOut } = useAuth();
@@ -30,17 +48,7 @@ export default function AdminLayout() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 md:px-6">
           <AppLogo size="sm" brandName={restaurant?.nom ?? 'Midi 5'} />
 
-          <nav className="hidden gap-1 md:flex">
-            <NavLink to="/admin" end className={navLinkClass}>
-              Accueil
-            </NavLink>
-            <NavLink to="/admin/cuisiniers" className={navLinkClass}>
-              Cuisiniers
-            </NavLink>
-            <NavLink to="/admin/parametres" className={navLinkClass}>
-              Paramètres
-            </NavLink>
-          </nav>
+          <AdminNav className="hidden gap-1 md:flex" />
 
           <div className="flex items-center gap-2">
             {user?.email && (
@@ -56,17 +64,7 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        <nav className="flex gap-1 border-t border-gray-100 px-4 py-2 md:hidden">
-          <NavLink to="/admin" end className={navLinkClass}>
-            Accueil
-          </NavLink>
-          <NavLink to="/admin/cuisiniers" className={navLinkClass}>
-            Cuisiniers
-          </NavLink>
-          <NavLink to="/admin/parametres" className={navLinkClass}>
-            Paramètres
-          </NavLink>
-        </nav>
+        <AdminNav className="flex gap-1 border-t border-gray-100 px-4 py-2 md:hidden" />
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
