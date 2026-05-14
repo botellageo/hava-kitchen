@@ -10,51 +10,57 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
+    function isRestoOwner(rid) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/restaurants/$(rid))
+        && get(/databases/$(database)/documents/restaurants/$(rid)).data.ownerUid == request.auth.uid;
     }
 
-    function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
-    }
-
-    function isStaff() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager', 'Staff'];
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // users — profil utilisateur (admin JB + employés)
-    // ─────────────────────────────────────────────────────────
-    match /users/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid) || isAdmin();
-      allow delete: if isAdmin();
+    // Cuisinier authentifié via custom token CF avec claim restaurantId
+    function isCuisinierOfResto(rid) {
+      return isSignedIn() && request.auth.token.restaurantId == rid;
     }
 
     // ─────────────────────────────────────────────────────────
-    // organisations — config restaurant (1 seule org = Midi 5)
+    // restaurants/{rid} — un restaurant par gérant
     // ─────────────────────────────────────────────────────────
-    match /organisations/{orgId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+    match /restaurants/{rid} {
+
+      // Read : owner du resto OU cuisinier authentifié via custom claim restaurantId.
+      allow read: if (isSignedIn() && resource.data.ownerUid == request.auth.uid)
+        || isCuisinierOfResto(rid);
+
+      // Create : authentifié + se déclare comme owner (anti-impersonation).
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasAll(['nom', 'ownerUid', 'managerPinHash', 'managerPinSalt', 'createdAt', 'updatedAt']);
+
+      // Update : owner uniquement + ownerUid immutable (anti-takeover).
+      allow update: if isSignedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+
+      // Delete : interdit en it.1 (pas de cas d'usage).
+      allow delete: if false;
+
+      // ─────────────────────────────────────────────────────
+      // sub: cuisiniers/{cid} — owner du resto CRUD complet
+      // ─────────────────────────────────────────────────────
+      match /cuisiniers/{cid} {
+        allow read, create, update, delete: if isRestoOwner(rid);
+      }
+
+      // ─────────────────────────────────────────────────────
+      // sub: pairingTokens/{tid} — tout passe par Cloud Function
+      // (it.2 : QR pairing téléphone cuisinier)
+      // ─────────────────────────────────────────────────────
+      match /pairingTokens/{tid} {
+        allow read, write: if false;
+      }
     }
 
     // ─────────────────────────────────────────────────────────
-    // releves_temperature — données HACCP critiques
-    // Tout staff peut écrire, personne ne peut modifier/supprimer un relevé
-    // (traçabilité immutable)
-    // ─────────────────────────────────────────────────────────
-    match /releves_temperature/{releveId} {
-      allow read: if isStaff();
-      allow create: if isStaff()
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.keys().hasAll(['temperature', 'equipement', 'createdAt', 'createdBy']);
-      allow update, delete: if false;
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // Par défaut : tout bloquer
+    // Default deny — toute autre collection bloquée
     // ─────────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

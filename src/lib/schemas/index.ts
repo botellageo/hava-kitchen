@@ -3,8 +3,9 @@
  *
  * RÈGLE : pour chaque collection Firestore, créer un schéma Zod ici
  * et l'utiliser systématiquement avec parseDoc() lors de la lecture.
- *
- * Ex: src/lib/schemas/releve_temperature.ts
  */
 
 export * from './common';
+export * from './restaurant';
+export * from './cuisinier';
+export * from './cuisinierSession';

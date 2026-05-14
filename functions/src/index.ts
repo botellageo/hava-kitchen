@@ -1,22 +1,25 @@
 /**
  * Cloud Functions — PMS Midi 5
  *
- * Pour activer le backup quotidien Firestore :
- * 1. Activer la facturation Blaze sur le projet Firebase (gratuit < quotas)
- * 2. Créer un bucket GCS pour les exports : gsutil mb gs://pms-midi5-backups
- * 3. Donner au service account Firebase le rôle "Cloud Datastore Import Export Admin"
- * 4. Déployer : npm run deploy
+ * Exports :
+ * - createPairingToken / redeemPairingToken (it.1) : flow QR pairing téléphone cuisinier
+ * - dailyFirestoreBackup (futur) : backup quotidien Firestore vers Cloud Storage
+ *
+ * Plan Blaze requis (CF callables + scheduled).
  */
 
+import * as admin from 'firebase-admin';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions/v2';
-import * as admin from 'firebase-admin';
 
 admin.initializeApp();
+
+export { createPairingToken, redeemPairingToken } from './pairing';
 
 // ─────────────────────────────────────────────────────────────
 // Backup quotidien Firestore vers Cloud Storage
 // Tourne tous les jours à 3h du matin (Europe/Paris)
+// À activer une fois le bucket pms-midi5-backups créé.
 // ─────────────────────────────────────────────────────────────
 export const dailyFirestoreBackup = onSchedule(
   {
@@ -43,7 +46,7 @@ export const dailyFirestoreBackup = onSchedule(
       const [operation] = await client.exportDocuments({
         name: client.databasePath(projectId, '(default)'),
         outputUriPrefix,
-        collectionIds: [], // [] = toutes les collections
+        collectionIds: [],
       });
       logger.info(`Backup lancé : ${operation.name}`);
     } catch (error) {

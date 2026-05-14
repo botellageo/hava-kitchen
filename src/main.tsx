@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.tsx';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthProvider } from '@/contexts/AuthProvider';
+import { CuisinierSessionProvider } from '@/contexts/CuisinierSessionProvider';
+import { ToastProvider } from '@/contexts/ToastProvider';
 import { initSentry } from '@/lib/sentry';
 
 initSentry();
@@ -15,7 +18,13 @@ createRoot(root).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-        <App />
+        <AuthProvider>
+          <CuisinierSessionProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </CuisinierSessionProvider>
+        </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </StrictMode>,

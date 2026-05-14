@@ -114,11 +114,42 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 ## État actuel
 
-- **Itération 0** — setup initial terminé 2026-05-14
-- Squelette Vite + React 19 + TS strict + Firebase 12 OK
-- Garde-fous Zod + Sentry + Husky + Vitest + rules-unit-testing en place
-- Firestore Rules avec immutabilité HACCP sur `releves_temperature` (testée, 6 cas)
-- 10 slash commands : `/feature`, `/review`, `/audit`, `/deep-audit`, `/brief-status`, `/retrospective`, `/update-docs`, `/deploy-firebase`, `/setup`, `/add-module-haccp`
-- CF backup quotidien stub à finaliser (nécessite passage Blaze)
-- Sentry : DSN à configurer dans `.env.local` quand prêt
-- Prochaine étape : premier vrai écran HACCP (probablement relevé de température)
+- **Itération 2** — Polish (extractions composants) — TERMINÉE 2026-05-14
+- 24 commits sur la branche `claude/interesting-taussig-f9ec09`
+
+### Itérations passées
+
+- ✅ It.0 — Setup initial (squelette + garde-fous, 2026-05-14)
+- ✅ It.1 — PWA + Auth + Schémas Zod + Rules multi-resto + Hooks + Admin + Cuisine + CF pairing + QR (2026-05-14, B+)
+- ✅ It.2 — Polish : extractions AppLogo/PinInput/Modal/getInitials, split CuisiniersPage + SetupRestaurantPage < 200L, nav AdminLayout factorisée, ToastProvider cleanup timers, cuisinierSessionSchema Zod (2026-05-14, 53/53 tests OK, refactor pur)
+
+### Acquis it.1
+
+- PWA installable (vite-plugin-pwa) + branding maquette emerald (`brand.*`/`surface.*` Tailwind palette)
+- Auth Firebase email/password gérant + ProtectedRoute + RequireRestaurant
+- Modèle Firestore multi-resto : `restaurants/{rid}` + `restaurants/{rid}/cuisiniers/{cid}` + sub `pairingTokens/{tid}` (CF only)
+- Schémas Zod : `restaurant.ts`, `cuisinier.ts` ; utilitaire `pin.ts` PBKDF2 SHA-256 100k iter + 16B salt
+- Firestore Rules réécrites : owner CRUD + cuisinier authentifié via custom claim `restaurantId`, anti-impersonation/anti-takeover sur `restaurants/{rid}`
+- Hooks : `useRestaurant` (CRUD + verifyManagerPin + cancellation guard) + `useCuisiniers` (live + verifyCuisinierPin)
+- Toast maison (`<ToastProvider>`)
+- Admin : Dashboard + CuisiniersPage CRUD + ParametresPage (modifier PIN gérant)
+- Cuisine iPad : sélection profil + clavier PIN tactile + quick-add depuis cuisine (PIN gérant + mini-form)
+- Cloud Functions : `createPairingToken` (auth gérant) + `redeemPairingToken` (anon, transaction, custom token avec claims)
+- QR pairing iPad (`qrcode.react`, auto-refresh) + Page `/pair` côté tel cuisinier (signInWithCustomToken + rollback signOut)
+- 53/53 tests Vitest passent. 24 tests rules écrits (différés JDK 21).
+
+### Dette & blockers tracés
+
+- **JDK 21+ requis** pour `npm run test:rules` et `firebase emulators` (actuellement JDK 17). Cf. `docs/improvements.md`.
+- **Plan Blaze à activer** sur projet Firebase `hava-kitchen` pour déployer les CF (`pairing` + `dailyFirestoreBackup`).
+- **Sentry DSN** à configurer dans `.env.local` quand prêt prod.
+- **PNG icons + maskable safe zone** pour iOS install (icônes actuelles en SVG).
+- **It.2 polish** : extractions `<AppLogo />`, `<PinInput />`, `<Modal />` (cf. `docs/improvements.md`), split `CuisiniersPage` (296L) et `SetupRestaurantPage` (236L).
+
+### Fichiers > 200 lignes à surveiller
+
+Aucun (it.2 a tout split ✓). Le plus gros : `CuisinierFormModal.tsx` à 135 lignes.
+
+### Prochaine étape
+
+→ Itération 3 (premier module HACCP, probablement relevé de température quand sondes livrées).
