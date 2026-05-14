@@ -191,31 +191,27 @@ export default function EtiquettesPage() {
                 >
                   Produit
                 </label>
-                <div className="flex gap-2">
-                  <div className="min-w-0 flex-1">
-                    <Combobox
-                      id="product-input"
-                      value={productName}
-                      onChange={setProductName}
-                      options={templates.map((t) => ({
-                        id: t.id,
-                        label: t.nom,
-                        hint: `DLC + ${t.dlcDays} j`,
-                      }))}
-                      placeholder="Tape ou sélectionne…"
-                      required
-                    />
-                  </div>
+                <Combobox
+                  id="product-input"
+                  value={productName}
+                  onChange={setProductName}
+                  options={templates.map((t) => ({
+                    id: t.id,
+                    label: t.nom,
+                    hint: `DLC + ${t.dlcDays} j`,
+                  }))}
+                  placeholder="Tape un nouveau nom ou…"
+                  required
+                />
+                {templates.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setListOpen(true)}
-                    title="Voir tous les produits"
-                    aria-label="Voir tous les produits"
-                    className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-base transition hover:bg-gray-50"
+                    className="bg-brand-soft hover:bg-brand-softer text-brand-darker mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand/30 px-4 py-3 text-sm font-semibold transition active:scale-[0.98]"
                   >
-                    📋
+                    📋 Choisir parmi mes {templates.length} produits
                   </button>
-                </div>
+                )}
                 {productName.trim() && (
                   <p className="mt-1 text-xs">
                     {matchedTemplate ? (
@@ -226,43 +222,6 @@ export default function EtiquettesPage() {
                       </span>
                     )}
                   </p>
-                )}
-
-                {templates.length > 0 && (
-                  <div className="mt-3">
-                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
-                      Sélection rapide
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {templates.map((t) => {
-                        const isSelected =
-                          productName.trim().toLowerCase() === t.nom.trim().toLowerCase();
-                        return (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => {
-                              setProductName(t.nom);
-                              setDlcDays(t.dlcDays);
-                              setDlcDaysTouched(false);
-                            }}
-                            className={`min-h-[52px] rounded-xl border-2 px-4 py-2 text-left transition active:scale-95 ${
-                              isSelected
-                                ? 'bg-brand border-brand text-white'
-                                : 'bg-surface hover:bg-brand-soft hover:border-brand border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <div className="text-sm leading-tight font-bold">{t.nom}</div>
-                            <div
-                              className={`text-xs ${isSelected ? 'text-white/85' : 'text-gray-500'}`}
-                            >
-                              DLC + {t.dlcDays} j
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 )}
               </div>
 
