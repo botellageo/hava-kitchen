@@ -5,6 +5,8 @@ import AdminLayout from '@/pages/admin/AdminLayout';
 import DashboardPage from '@/pages/admin/DashboardPage';
 import CuisiniersPage from '@/pages/admin/CuisiniersPage';
 import ParametresPage from '@/pages/admin/ParametresPage';
+import CuisinierSelectPage from '@/pages/cuisine/CuisinierSelectPage';
+import CuisineHomePage from '@/pages/cuisine/CuisineHomePage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RequireRestaurant } from '@/components/RequireRestaurant';
 
@@ -33,6 +35,26 @@ function App() {
         <Route path="/admin/cuisiniers" element={<CuisiniersPage />} />
         <Route path="/admin/parametres" element={<ParametresPage />} />
       </Route>
+      <Route
+        path="/cuisine"
+        element={
+          <ProtectedRoute>
+            <RequireRestaurant>
+              <CuisinierSelectPage />
+            </RequireRestaurant>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cuisine/home"
+        element={
+          <ProtectedRoute>
+            <RequireRestaurant>
+              <CuisineHomePage />
+            </RequireRestaurant>
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/admin" replace />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
