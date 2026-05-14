@@ -1,7 +1,7 @@
 # pms-midi5 — Memory
 
-> Phase courante : Itération 1 — Squelette PWA + Admin + Cuisine + QR pairing (TERMINÉE)
-> Prochaine : Itération 2 — Polish (extractions composants) ou Itération 3 — premier module HACCP
+> Phase courante : Itération 2 — Polish (extractions composants) (TERMINÉE)
+> Prochaine : Itération 3 — premier module HACCP (probablement relevé température)
 
 ## Phases
 
@@ -31,6 +31,20 @@
   - **17 commits**, **53/53 tests vitest passent** (pin 16, useCuisiniers 5, Toast 5, ErrorBoundary 3, rules 24)
   - **Audit #1 B+** : 0 BLOQUANT, 2 WARNING critiques fixés (race condition useRestaurant + rollback signOut PairPage), 4 WARNING reportés it.2 (cleanup timers Toast, splits pages > 200L, duplications AppLogo/PinInput/Modal), 10 faux positifs éliminés
   - **Dette tracée** : JDK 21 requis pour test:rules + CF emulator (cf. memory `dev_env_jdk21`), Blaze à activer pour deploy CF, PNG icons + maskable safe zone pour iOS install
+
+- ✅ Phase 2 — Itération 2 : Polish extractions composants (2026-05-14, 7 commits, 0 changement de comportement)
+  - **`<AppLogo />`** centralisé (size sm/md + showBrand + brandName) — 6 pages refactorées
+  - **`<PinInput />`** centralisé (filtre numérique + tracking + maxLength config) — 4 modals/pages refactorés
+  - **`<Modal />`** wrapper (backdrop + container + variant default/overlay + size sm/md + ESC + a11y dialog) — 5 modals refactorés
+  - **Helper `getInitials(prenom, nom)`** — `src/lib/initials.ts`
+  - **Split `CuisiniersPage`** : `CuisinierFormModal` extrait → 296L à 141L
+  - **Split `SetupRestaurantPage`** : `SetupStepResto` + `SetupStepPin` extraits → 236L à 74L
+  - **Factorisation nav AdminLayout** : `<AdminNav />` inline avec tableau NAV_ITEMS — plus de duplication desktop/mobile
+  - **ToastProvider cleanup timers** : useEffect cleanup au unmount Provider (HMR/ErrorBoundary safe)
+  - **`cuisinierSessionSchema` Zod** : remplace la validation manuelle inline dans CuisinierSessionProvider
+  - **`useCuisiniers.addCuisinier`** : validation prenom/nom non vides avant addDoc
+  - **Tous les fichiers passent < 200 lignes** (convention CLAUDE.md respectée)
+  - 53/53 tests Vitest continuent à passer ✓
 
 ## Collections Firestore actives (après it.1)
 

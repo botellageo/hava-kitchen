@@ -114,13 +114,14 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 ## État actuel
 
-- **Itération 1** — Squelette PWA + Admin + Cuisine + QR pairing — TERMINÉE 2026-05-14, audit **B+**
-- 17 commits sur la branche `claude/interesting-taussig-f9ec09` (pas encore pushé)
+- **Itération 2** — Polish (extractions composants) — TERMINÉE 2026-05-14
+- 24 commits sur la branche `claude/interesting-taussig-f9ec09`
 
 ### Itérations passées
 
 - ✅ It.0 — Setup initial (squelette + garde-fous, 2026-05-14)
 - ✅ It.1 — PWA + Auth + Schémas Zod + Rules multi-resto + Hooks + Admin + Cuisine + CF pairing + QR (2026-05-14, B+)
+- ✅ It.2 — Polish : extractions AppLogo/PinInput/Modal/getInitials, split CuisiniersPage + SetupRestaurantPage < 200L, nav AdminLayout factorisée, ToastProvider cleanup timers, cuisinierSessionSchema Zod (2026-05-14, 53/53 tests OK, refactor pur)
 
 ### Acquis it.1
 
@@ -147,9 +148,8 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 ### Fichiers > 200 lignes à surveiller
 
-- `src/pages/admin/CuisiniersPage.tsx` — 296 lignes (modal inline à extraire en it.2)
-- `src/pages/SetupRestaurantPage.tsx` — 236 lignes (2 étapes wizard à split en it.2)
+Aucun (it.2 a tout split ✓). Le plus gros : `CuisinierFormModal.tsx` à 135 lignes.
 
 ### Prochaine étape
 
-→ Itération 2 (polish) ou Itération 3 (premier module HACCP, probablement relevé de température quand sondes livrées).
+→ Itération 3 (premier module HACCP, probablement relevé de température quand sondes livrées).
