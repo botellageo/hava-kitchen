@@ -9,6 +9,15 @@
 - **PNG icons pour iOS** — Les icônes actuelles sont en SVG. iOS Safari préfère PNG pour `apple-touch-icon` (sinon l'écran d'install peut être blanc). Générer `pwa-192.png` et `pwa-512.png` depuis les SVG. À faire avant que JB installe l'app sur l'iPad de prod.
 - **Maskable icon safe zone** — Le SVG actuel ne respecte pas la safe zone maskable (contenu dans cercle de 80% du canvas). Pour Android Chrome avec icône adaptive, le "M5" risque d'être tronqué. À refaire avec padding correct quand on génère les PNG.
 
+### Environnement dev
+
+- **JDK 21+ requis** — Firebase Tools (emulators) refuse de démarrer avec JDK < 21. Local installé : JDK 17.0.12. À installer avant de pouvoir :
+  - lancer `npm run test:rules` (tests Firestore Rules — Steps 4, 11)
+  - lancer `firebase emulators:start` (Steps 10-13 : CF + tests CF)
+  - tester l'auth en local via emulator
+    → Installer Eclipse Temurin 21 LTS, mettre à jour `JAVA_HOME` et `PATH`.
+    → Tant que JDK 21 pas en place, les tests rules sont écrits mais non validés contre l'emulator. Validation différée.
+
 ### Sécurité & Cloud Functions
 
 - **CF `deleteCuisinier` avec check références** — En it.1 la rule autorise `delete` au gérant sans vérifier l'absence de relevés HACCP qui pointent vers ce cuisinier. Quand on créera la sous-collection `releves_temperature` (it.3+), il faudra une CF callable qui :
