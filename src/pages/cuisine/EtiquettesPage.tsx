@@ -1,19 +1,22 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useRestaurant } from '@/hooks/useRestaurant';
-import { useProductTemplates, type ProductTemplateDoc } from '@/hooks/useProductTemplates';
+import { useProductTemplates } from '@/hooks/useProductTemplates';
 import { useEtiquettes } from '@/hooks/useEtiquettes';
 import { useCuisinierSession } from '@/hooks/useCuisinierSession';
 import { useToast } from '@/hooks/useToast';
 import { AppLogo } from '@/components/ui/AppLogo';
-import { ProductTemplateFormModal } from '@/components/ui/ProductTemplateFormModal';
 import { EtiquettePreview } from '@/components/cuisine/EtiquettePreview';
 import { calculateDlc, generateEtiquettePdf } from '@/lib/generateEtiquettePdf';
 
-type TemplateEdit = { mode: 'add' } | { mode: 'edit'; template: ProductTemplateDoc };
-
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function findMatch(templates: { id: string; nom: string; dlcDays: number }[], name: string) {
+  const clean = name.trim().toLowerCase();
+  if (!clean) return null;
+  return templates.find((t) => t.nom.trim().toLowerCase() === clean) ?? null;
 }
 
 export default function EtiquettesPage() {
@@ -28,18 +31,40 @@ export default function EtiquettesPage() {
   const { cuisinier } = useCuisinierSession();
   const { showToast } = useToast();
 
-  const [templateId, setTemplateId] = useState<string>('');
+  const [productName, setProductName] = useState('');
+  const [dlcDays, setDlcDays] = useState<number>(3);
   const [prodDate, setProdDate] = useState<string>(todayIso());
   const [lot, setLot] = useState('');
   const [qte, setQte] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<TemplateEdit | null>(null);
 
-  const selectedTemplate = templates.find((t) => t.id === templateId);
+  const matchedTemplate = useMemo(
+    () => findMatch(templates, productName),
+    [templates, productName],
+  );
+
+  // Quand on sélectionne / tape un nom qui match un template existant,
+  // on auto-charge ses DLC jours. Si l'utilisateur a déjà modifié dlcDays
+  // manuellement, on respecte sa valeur (mémorisé via dlcDaysTouched).
+  // Pattern de sync state local avec donnée Firestore live, justifié.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  const [dlcDaysTouched, setDlcDaysTouched] = useState(false);
+  useEffect(() => {
+    if (matchedTemplate && !dlcDaysTouched) {
+      setDlcDays(matchedTemplate.dlcDays);
+    }
+  }, [matchedTemplate, dlcDaysTouched]);
+
+  // Reset dlcDaysTouched quand le nom de produit change (nouveau contexte).
+  useEffect(() => {
+    setDlcDaysTouched(false);
+  }, [productName]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   const dlc = useMemo(() => {
-    if (!selectedTemplate || !prodDate) return '';
-    return calculateDlc(prodDate, selectedTemplate.dlcDays);
-  }, [selectedTemplate, prodDate]);
+    if (!productName.trim() || !prodDate) return '';
+    return calculateDlc(prodDate, dlcDays);
+  }, [productName, prodDate, dlcDays]);
 
   if (!cuisinier) {
     return <Navigate to="/cuisine" replace />;
@@ -57,8 +82,13 @@ export default function EtiquettesPage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!selectedTemplate) {
-      showToast({ kind: 'error', message: 'Choisis un produit.' });
+    const cleanName = productName.trim();
+    if (!cleanName) {
+      showToast({ kind: 'error', message: 'Nom de produit requis.' });
+      return;
+    }
+    if (!Number.isInteger(dlcDays) || dlcDays < 0 || dlcDays > 365) {
+      showToast({ kind: 'error', message: 'DLC : entier entre 0 et 365 jours.' });
       return;
     }
     if (!Number.isInteger(qte) || qte < 1 || qte > 50) {
@@ -67,8 +97,27 @@ export default function EtiquettesPage() {
     }
     setSubmitting(true);
     try {
+      // Réconcilie la liste de templates :
+      // - si pas de match exact → on crée un nouveau template
+      // - si match mais DLC différente → on update les DLC du template
+      const match = findMatch(templates, cleanName);
+      if (!match) {
+        await addTemplate({ nom: cleanName, dlcDays });
+        showToast({
+          kind: 'info',
+          message: `Produit "${cleanName}" ajouté à la liste.`,
+        });
+      } else if (match.dlcDays !== dlcDays) {
+        await updateTemplate(match.id, { dlcDays });
+        showToast({
+          kind: 'info',
+          message: `DLC de "${cleanName}" mise à jour à ${dlcDays} j.`,
+        });
+      }
+
+      // Crée l'étiquette (HACCP immutable)
       await createEtiquette({
-        produit: selectedTemplate.nom,
+        produit: cleanName,
         prodDate,
         dlc,
         ...(lot.trim() ? { lot: lot.trim() } : {}),
@@ -76,8 +125,9 @@ export default function EtiquettesPage() {
         createdBy: cuisinier!.id,
       });
 
+      // Génère le PDF
       generateEtiquettePdf({
-        produit: selectedTemplate.nom,
+        produit: cleanName,
         prodDate,
         dlc,
         ...(lot.trim() ? { lot: lot.trim() } : {}),
@@ -90,7 +140,7 @@ export default function EtiquettesPage() {
         message: `${qte} étiquette${qte > 1 ? 's' : ''} générée${qte > 1 ? 's' : ''}.`,
       });
 
-      // Reset partiel : on garde le produit + date pour permettre une nouvelle impression rapide.
+      // Reset partiel
       setLot('');
       setQte(1);
     } catch (err) {
@@ -124,59 +174,76 @@ export default function EtiquettesPage() {
         </h1>
 
         {templatesLoading ? (
-          <div className="text-sm text-gray-500">Chargement des produits…</div>
-        ) : templates.length === 0 ? (
-          <div className="bg-surface rounded-card border-2 border-dashed border-gray-300 p-8 text-center">
-            <p className="mb-1 text-sm text-gray-500">Pas encore de produit configuré.</p>
-            <p className="mb-4 text-sm text-gray-400">Ajoute ton premier produit.</p>
-            <button
-              type="button"
-              onClick={() => setEditingTemplate({ mode: 'add' })}
-              className="bg-brand hover:bg-brand-dark rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition"
-            >
-              + Ajouter un produit
-            </button>
-          </div>
+          <div className="text-sm text-gray-500">Chargement…</div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-700">Produit</label>
-                <div className="flex gap-2">
-                  <select
-                    required
-                    value={templateId}
-                    onChange={(e) => setTemplateId(e.target.value)}
-                    className="focus:outline-brand min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base focus:outline-2"
-                  >
-                    <option value="">— Choisir —</option>
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.nom} (DLC + {t.dlcDays} j)
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setEditingTemplate({ mode: 'add' })}
-                    title="Ajouter un nouveau produit"
-                    className="bg-brand hover:bg-brand-dark shrink-0 rounded-lg px-3 text-sm font-semibold text-white transition"
-                  >
-                    +
-                  </button>
-                </div>
-                {selectedTemplate && (
-                  <button
-                    type="button"
-                    onClick={() => setEditingTemplate({ mode: 'edit', template: selectedTemplate })}
-                    className="text-brand-darker mt-1 text-xs font-semibold hover:underline"
-                  >
-                    ✏️ Modifier ce produit
-                  </button>
+                <label
+                  htmlFor="product-input"
+                  className="mb-1 block text-sm font-semibold text-gray-700"
+                >
+                  Produit
+                </label>
+                <input
+                  id="product-input"
+                  type="text"
+                  required
+                  autoComplete="off"
+                  list="product-templates-list"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="Tape ou sélectionne…"
+                  className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
+                />
+                <datalist id="product-templates-list">
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.nom}>
+                      DLC + {t.dlcDays} j
+                    </option>
+                  ))}
+                </datalist>
+                {productName.trim() && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    {matchedTemplate ? (
+                      <span className="text-brand-darker">✓ Produit existant</span>
+                    ) : (
+                      <span className="text-info-darker">
+                        + Sera créé dans la liste à la 1<sup>ère</sup> impression
+                      </span>
+                    )}
+                  </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="dlc-days"
+                    className="mb-1 block text-sm font-semibold text-gray-700"
+                  >
+                    DLC (jours)
+                  </label>
+                  <input
+                    id="dlc-days"
+                    type="number"
+                    required
+                    min={0}
+                    max={365}
+                    step={1}
+                    value={dlcDays}
+                    onChange={(e) => {
+                      setDlcDays(Number(e.target.value));
+                      setDlcDaysTouched(true);
+                    }}
+                    className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
+                  />
+                  {matchedTemplate && matchedTemplate.dlcDays !== dlcDays && (
+                    <p className="text-info-darker mt-1 text-xs">
+                      ⓘ DLC du produit sera mise à jour à {dlcDays} j.
+                    </p>
+                  )}
+                </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-700">
                     Date production
@@ -189,6 +256,9 @@ export default function EtiquettesPage() {
                     className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-700">Quantité</label>
                   <input
@@ -202,24 +272,23 @@ export default function EtiquettesPage() {
                     className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-700">
-                  Lot / Référence <span className="font-normal text-gray-400">(optionnel)</span>
-                </label>
-                <input
-                  type="text"
-                  value={lot}
-                  onChange={(e) => setLot(e.target.value)}
-                  placeholder="L-260514-N"
-                  className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
-                />
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-700">
+                    Lot <span className="font-normal text-gray-400">(optionnel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={lot}
+                    onChange={(e) => setLot(e.target.value)}
+                    placeholder="L-260514-N"
+                    className="focus:outline-brand w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-2"
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={submitting || !selectedTemplate}
+                disabled={submitting || !productName.trim()}
                 className="bg-brand hover:bg-brand-dark w-full rounded-xl px-6 py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? 'Génération…' : '🖨️ Générer le PDF'}
@@ -233,42 +302,18 @@ export default function EtiquettesPage() {
             <div>
               <div className="mb-2 text-sm font-semibold text-gray-700">Aperçu (taille réelle)</div>
               <EtiquettePreview
-                produit={selectedTemplate?.nom ?? ''}
+                produit={productName || '—'}
                 prodDate={prodDate}
                 dlc={dlc}
                 lot={lot}
                 operateur={cuisinier.prenom}
               />
               <div className="bg-brand-softer text-brand-darker mt-3 rounded-lg p-3 text-xs">
-                ℹ️ DLC calculée automatiquement selon la fiche produit (DLC + N jours).
+                ℹ️ DLC = date de production + jours configurés. Tape un nouveau produit pour
+                l'ajouter à la liste, ou modifie les DLC d'un produit existant.
               </div>
             </div>
           </div>
-        )}
-
-        {editingTemplate && (
-          <ProductTemplateFormModal
-            initial={editingTemplate.mode === 'edit' ? editingTemplate.template : null}
-            onClose={() => setEditingTemplate(null)}
-            onSubmit={async ({ nom, dlcDays }) => {
-              try {
-                if (editingTemplate.mode === 'add') {
-                  const newId = await addTemplate({ nom, dlcDays });
-                  setTemplateId(newId);
-                  showToast({ kind: 'success', message: `${nom} ajouté.` });
-                } else {
-                  await updateTemplate(editingTemplate.template.id, { nom, dlcDays });
-                  showToast({ kind: 'success', message: `${nom} mis à jour.` });
-                }
-                setEditingTemplate(null);
-              } catch (err) {
-                showToast({
-                  kind: 'error',
-                  message: err instanceof Error ? err.message : 'Erreur',
-                });
-              }
-            }}
-          />
         )}
       </main>
     </div>
