@@ -1,205 +1,182 @@
-# Feature Plan — It.4 Réception OCR + Étiquettes DLC
+# Feature Plan — Refonte Espace gestion (dashboard admin façon maquette)
 
-> Date : 2026-05-14 | Dev : Geoffrey | Statut : **EN COURS**
-> Branche : `claude/interesting-taussig-f9ec09`
+> Date: 2026-07-16 | Dev: Geoffrey | Statut: **EN COURS**
+> Branche : `claude/admin-dashboard-maquette`
 
 ## Scope
 
-Deux modules HACCP cuisine groupés en une itération (partage les Templates produits) :
+Le dashboard admin (`/admin`) passe de 4 tuiles-liens à une grille de 4 cards riches reprenant la maquette `PMS_04_demo_app.html` : **Équipe** (liste + gestion inline), **Frigos & sondes** (nouvelle collection `equipements`, config seulement, + pré-remplissage démo), **Templates produits** (liste + gestion inline), **Exports DDPP** (vraie feature : registre mensuel PDF + historique). Les pages `/admin/cuisiniers` et `/admin/templates` sont supprimées (tout inline).
 
-1. **Réception** : photo de l'étiquette fournisseur → OCR Claude Vision IA → formulaire pré-rempli → validation → Firestore immutable + photo Storage 3 ans (preuve DDPP).
-2. **Étiquettes DLC** : sélection produit (Templates) + date production + lot + quantité → aperçu visuel 62×29mm → génération PDF (impression Brother QL-820NWB simulée, intégration réelle en it.5+).
+## Challenge (validé par Geoffrey 2026-07-16)
 
-## Hors scope it.4
+- Frigos & sondes → **vraie collection** `equipements` (config nom/type/seuils/sonde, pas de relevés) + bouton de seed démo dans l'état vide
+- Exports DDPP → **vraie feature maintenant** : PDF client-side (jsPDF déjà en dep) compilant réceptions + étiquettes du mois, trace d'export en Firestore (create-only)
+- Pages dédiées → **supprimées**, gestion 100 % inline sur le dashboard, nav allégée
+- Badge équipement : statut statique « OK » tant que le module Températures n'existe pas (pas de sonde branchée)
+- Accès Mode cuisine : conservé via bouton dans l'en-tête du dashboard
 
-- Impression réelle Brother QL-820NWB (it.5+ matériel)
-- Module Températures (it.6+ sondes)
-- Module Plan de nettoyage, Non-conformités, Exports DDPP (it.7+)
-- Save-as-draft pour réception (simple submit final)
+## Step 1 — Collection equipements (schéma + rules + hook)
 
-## Challenge (validé)
+**Commit** : `feat(equipements): schema + rules + hook config frigos/sondes`
+**Fichiers** :
 
-| Axe                      | Décision                                                                 |
-| ------------------------ | ------------------------------------------------------------------------ |
-| **Modèle OCR**           | `claude-haiku-4-5` (rapide, ~0.001€/photo, suffisant)                    |
-| **Templates produits**   | Vides au démarrage, JB crée depuis `/admin/templates`                    |
-| **Compression photo**    | `browser-image-compression` max 1920px + JPEG 0.8 (~300-500kb)           |
-| **Validation réception** | Submit final, pas de drafts                                              |
-| **Stockage photo**       | Firebase Storage permanent (3 ans, preuve DDPP)                          |
-| **CF auth**              | owner OR cuisinier authentifié (claim restaurantId)                      |
-| **Secret Anthropic**     | `ANTHROPIC_API_KEY` via `firebase functions:secrets:set` (jamais bundlé) |
-| **Immutabilité**         | `receptions` + `etiquettes` = `allow update, delete: if false;` (HACCP)  |
-| **PDF**                  | `jspdf` client (~50kb), pas de CF                                        |
+- CREATE `src/lib/schemas/equipement.ts`
+- MODIFY `src/lib/schemas/index.ts` (ajout export)
+- MODIFY `firestore.rules` (sub `equipements` : read owner+cuisinier, write owner)
+- CREATE `src/hooks/useEquipements.ts`
+- CREATE `src/test/rules/equipements.test.ts` (même pattern que `templates.test.ts`, exécution différée JDK 21)
 
-## Nouvelles collections
+**Code — schéma** :
 
-| Path                                       | Schéma                                                                               | Rules                                                         |
-| ------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| `restaurants/{rid}/productTemplates/{pid}` | `{ nom, dlcDays, createdAt, updatedAt }`                                             | Read owner+cuisinier ; Write owner only                       |
-| `restaurants/{rid}/receptions/{rid_id}`    | `{ produit, fournisseur, lot?, qte?, dlc?, photoUrl, notes?, createdAt, createdBy }` | Read owner+cuisinier ; Create owner+cuisinier ; **immutable** |
-| `restaurants/{rid}/etiquettes/{eid}`       | `{ produit, prodDate, dlc, lot?, qte, createdAt, createdBy }`                        | Idem (immutable)                                              |
+```ts
+// src/lib/schemas/equipement.ts
+import { z } from 'zod';
+import { timestampSchema } from './common';
 
-## Dépendances à installer
+/**
+ * Équipement froid configurable par le gérant (config, PAS un relevé HACCP → mutable).
+ * - `type` : pilote l'icône et les seuils par défaut à l'ajout
+ * - `seuilMin`/`seuilMax` : bornes d'alerte en °C (futur module Températures)
+ * - `sondeId` : identifiant sonde physique (optionnel tant que non livrées)
+ *
+ * Path Firestore : restaurants/{rid}/equipements/{eid}
+ */
+export const equipementSchema = z.object({
+  nom: z.string().min(1),
+  type: z.enum(['frigo', 'congelateur', 'autre']),
+  seuilMin: z.number(),
+  seuilMax: z.number(),
+  sondeId: z.string().optional(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+});
 
-```bash
-# Client
-npm i browser-image-compression jspdf
-
-# Functions
-cd functions && npm i @anthropic-ai/sdk
+export type Equipement = z.infer<typeof equipementSchema>;
 ```
 
-## Pré-requis manuel Geoffrey
+**Code — rule** (dans le bloc `match /restaurants/{rid}`) :
 
-```bash
-# Secret Anthropic (1× au début)
-firebase functions:secrets:set ANTHROPIC_API_KEY
-# Coller la clé Anthropic
+```js
+// sub: equipements/{eid} — config frigos/sondes (mutable, write gérant only)
+match /equipements/{eid} {
+  allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+  allow create, update, delete: if isRestoOwner(rid);
+}
 ```
 
----
+**Code — hook** : `useEquipements(restaurantId)` sur le modèle exact de `useProductTemplates` (onSnapshot + `tryParseDoc` + orderBy('nom')), mutations `addEquipement` / `updateEquipement` / `deleteEquipement` avec validation du payload avant écriture, + `seedDemo()` qui crée les 3 équipements de la maquette (Frigo positif 1 & 2 seuils 0/+6, Congélateur seuils −22/−18, sondes 0xA1B2/B3/B4).
 
-## Step 4.1 — Schémas Zod + utilitaires
+**Validation** : `npm test` + `npm run build` passent.
+**Après** : → `/review` → commit
 
-**Commit** : `feat(schemas): productTemplate + reception + etiquette + tests`
+## Step 2 — Trace exports DDPP (schéma + rules + hook)
 
+**Commit** : `feat(exports): schema + rules + hook historique exports DDPP`
 **Fichiers** :
 
-- CREATE `src/lib/schemas/productTemplate.ts`
-- CREATE `src/lib/schemas/reception.ts`
-- CREATE `src/lib/schemas/etiquette.ts`
-- MODIFY `src/lib/schemas/index.ts` (exports)
+- CREATE `src/lib/schemas/exportDdpp.ts`
+- MODIFY `src/lib/schemas/index.ts`
+- MODIFY `firestore.rules` (sub `exportsDdpp` : owner read+create, `allow update, delete: if false`)
+- CREATE `src/hooks/useExportsDdpp.ts`
 
-**Validation** : `npm test` passe. Schemas parsent les payloads attendus.
+**Code — schéma** :
 
----
+```ts
+// src/lib/schemas/exportDdpp.ts
+import { z } from 'zod';
+import { timestampSchema } from './common';
 
-## Step 4.2 — Firestore rules + Storage rules
+/**
+ * Trace d'un export registre DDPP (create-only : preuve qu'un export a été produit).
+ * Le PDF n'est pas stocké — il est regénéré à la demande depuis les données
+ * immutables (receptions + etiquettes), ce qui garantit sa fidélité.
+ *
+ * - `mois` : période couverte au format YYYY-MM
+ *
+ * Path Firestore : restaurants/{rid}/exportsDdpp/{xid}
+ * Immutable : allow update, delete: if false.
+ */
+export const exportDdppSchema = z.object({
+  mois: z.string().regex(/^\d{4}-\d{2}$/),
+  nbReceptions: z.number().int().min(0),
+  nbEtiquettes: z.number().int().min(0),
+  createdAt: timestampSchema,
+  createdBy: z.string().min(1),
+});
 
-**Commit** : `feat(rules): 3 sous-collections (templates + receptions + etiquettes) + storage path-based`
+export type ExportDdpp = z.infer<typeof exportDdppSchema>;
+```
 
+**Code — rule** :
+
+```js
+// sub: exportsDdpp/{xid} — trace des registres générés (gérant only, create-only)
+match /exportsDdpp/{xid} {
+  allow read: if isRestoOwner(rid);
+  allow create: if isRestoOwner(rid)
+    && request.resource.data.keys().hasAll(['mois', 'nbReceptions', 'nbEtiquettes', 'createdAt', 'createdBy']);
+  allow update, delete: if false;
+}
+```
+
+**Code — hook** : `useExportsDdpp(restaurantId)` : onSnapshot orderBy('createdAt', 'desc') + `addExport({ mois, nbReceptions, nbEtiquettes, createdBy })`.
+
+**Validation** : `npm test` + `npm run build` passent.
+**Après** : → `/review` → commit
+
+## Step 3 — Génération PDF registre mensuel
+
+**Commit** : `feat(exports): generation PDF registre mensuel DDPP`
 **Fichiers** :
 
-- MODIFY `firestore.rules` — ajout 3 sous-collections avec immutabilité HACCP
-- MODIFY `storage.rules` — path-based access pour `restaurants/{rid}/receptions/{rid_id}/photo.jpg`
-- CREATE `src/test/rules/templates.test.ts` (gestion CRUD owner)
-- CREATE `src/test/rules/haccp_immutable.test.ts` (immutable receptions + etiquettes)
+- CREATE `src/lib/registreData.ts` — `getRegistreData(restaurantId, mois)` : deux `getDocs` ponctuels (receptions + etiquettes du mois, `where('createdAt', '>=', start)` / `< end`, index mono-champ automatique), parse via `tryParseDoc`, retourne `{ receptions, etiquettes }`
+- CREATE `src/lib/generateRegistrePdf.ts` — `generateRegistrePdf({ restaurantNom, mois, receptions, etiquettes })` : jsPDF A4 portrait, en-tête (resto, période, date de génération), section **Réceptions** (tableau date / produit / fournisseur / lot / qté / DLC), section **Étiquettes DLC** (tableau date / produit / prod. le / DLC / qté / par), pagination manuelle (helper ligne par ligne comme `generateEtiquettePdf.ts`, pas de dépendance jspdf-autotable), pied « Document généré par PMS Midi 5 — données immutables » ; `.save('registre-ddpp-YYYY-MM.pdf')`
 
-**Validation** : `npm run test:rules` (différé JDK 21) ; rules compilent sans erreur via `firebase deploy --only firestore:rules --dry-run`.
+**Validation** : test unitaire Vitest sur le découpage de mois (bornes start/end) + génération manuelle d'un PDF en local.
+**Après** : → `/review` → commit
 
----
+## Step 4 — Cards Équipe + Templates produits (+ AdminCard générique)
 
-## Step 4.3 — Hooks Firestore
-
-**Commit** : `feat(hooks): useProductTemplates + useReceptions + useEtiquettes`
-
+**Commit** : `feat(admin): cards Equipe + Templates produits inline`
 **Fichiers** :
 
-- CREATE `src/hooks/useProductTemplates.ts` (CRUD live)
-- CREATE `src/hooks/useReceptions.ts` (live + createReception)
-- CREATE `src/hooks/useEtiquettes.ts` (live + createEtiquette)
+- CREATE `src/components/admin/AdminCard.tsx` — wrapper card : `{ icon, title, children, footer }`, style maquette (`bg-surface rounded-card border`)
+- CREATE `src/components/admin/EquipeCard.tsx` — reprend la logique de `CuisiniersPage` (rows avatar + prénom + statut PIN, boutons Modifier / Désactiver / Supprimer compacts, `CuisinierFormModal` existant, bouton « + Ajouter un membre » pleine largeur en footer, états loading/vide)
+- CREATE `src/components/admin/TemplatesCard.tsx` — reprend la logique de `TemplatesPage` (rows nom + « DLC + N j », Modifier / Supprimer, `ProductTemplateFormModal` existant, « + Ajouter un produit » en footer)
 
-**Validation** : TS strict + lint OK. Tests unit déférés (priorité audit).
+**Contrainte** : chaque composant < 200 lignes (la logique CRUD vit déjà dans les hooks).
+**Validation** : vérif visuelle en dev local sur `/admin`.
+**Après** : → `/review` → commit
 
----
+## Step 5 — Cards Frigos & sondes + Exports DDPP
 
-## Step 4.4 — Page Admin /admin/templates + nav
-
-**Commit** : `feat(admin): page Templates produits CRUD`
-
+**Commit** : `feat(admin): cards Equipements + Exports DDPP`
 **Fichiers** :
 
-- CREATE `src/pages/admin/TemplatesPage.tsx` (liste + Modal ajout/édition)
-- CREATE `src/components/admin/ProductTemplateFormModal.tsx` (form nom + dlcDays)
-- MODIFY `src/App.tsx` (route `/admin/templates`)
-- MODIFY `src/pages/admin/AdminLayout.tsx` (item nav "Produits")
-- MODIFY `src/pages/admin/DashboardPage.tsx` (4e tuile vers /admin/templates)
+- CREATE `src/components/admin/EquipementFormModal.tsx` — form nom / type (select) / seuils min-max / sondeId optionnel, sur le modèle de `ProductTemplateFormModal`
+- CREATE `src/components/admin/EquipementsCard.tsx` — rows nom + « Sonde : X — Seuils a/b °C » + badge statique « OK », Modifier / Supprimer, footer « + Ajouter un équipement » ; état vide avec DEUX boutons : « + Ajouter » et « Pré-remplir (démo) » → `seedDemo()`
+- CREATE `src/components/admin/ExportsDdppCard.tsx` — historique (mois + « Généré le … par … » + bouton Télécharger qui regénère le PDF à la volée via `getRegistreData` + `generateRegistrePdf`), bouton primaire « Générer le registre du mois en cours » (génère + télécharge + `addExport`), loading state pendant génération
 
-**Validation** : Ajout template "Tartare de saumon DLC + 3 j", apparait dans la liste live, modif/suppr fonctionnent.
+**Validation** : génération réelle d'un registre sur le compte démo (données réelles du resto de test).
+**Après** : → `/review` → commit
 
----
+## Step 6 — Refonte DashboardPage + suppression pages + nav
 
-## Step 4.5 — Functions deps + helper Anthropic
-
-**Commit** : `chore(functions): install @anthropic-ai/sdk + helper Claude Vision`
-
+**Commit** : `refactor(admin): dashboard facon maquette, suppression pages Cuisiniers/Produits`
 **Fichiers** :
 
-- MODIFY `functions/package.json` (add `@anthropic-ai/sdk`)
-- CREATE `functions/src/anthropic.ts` (client wrapper avec gestion secret + retry)
+- MODIFY `src/pages/admin/DashboardPage.tsx` — greeting + titre « Gestion » + bouton « Mode cuisine → » dans l'en-tête, grille `md:grid-cols-2` avec les 4 cards
+- MODIFY `src/App.tsx` — suppression routes `/admin/cuisiniers` et `/admin/templates`
+- MODIFY `src/pages/admin/AdminLayout.tsx` — nav réduite à Accueil + Paramètres (desktop + mobile)
+- DELETE `src/pages/admin/CuisiniersPage.tsx`
+- DELETE `src/pages/admin/TemplatesPage.tsx`
 
-**Validation** : `cd functions && npm run build` OK.
+**Validation** : navigation complète en dev local (aucun lien mort), `npm test`, `npm run build`.
+**Après** : → `/review` → `/audit` → `/update-docs` → push → merge main
 
----
+## Notes
 
-## Step 4.6 — CF ocrReception (callable + Claude Vision)
-
-**Commit** : `feat(functions): CF ocrReception (Claude Vision -> JSON structure)`
-
-**Fichiers** :
-
-- CREATE `functions/src/ocr.ts` (callable, auth owner|cuisinier, télécharge image, appel Claude haiku-4-5 avec prompt structuré, parse JSON, retourne fields)
-- MODIFY `functions/src/auth.ts` (helper `assertOwnerOrCuisinier(uid, rid)` réutilisé)
-- MODIFY `functions/src/index.ts` (export ocrReception)
-
-**Validation** : Build CF OK. Test manuel après deploy (cf step 4.9).
-
----
-
-## Step 4.7 — Page /cuisine/reception + Photo + OCR flow
-
-**Commit** : `feat(cuisine): page reception photo + OCR auto-remplissage`
-
-**Fichiers** :
-
-- CREATE `src/lib/imageCompress.ts` (wrap `browser-image-compression`)
-- CREATE `src/components/cuisine/ReceptionPhotoUploader.tsx` (input file capture + compress + Storage upload + progress)
-- CREATE `src/pages/cuisine/ReceptionPage.tsx` (orchestre photo → OCR → form → submit)
-- MODIFY `src/App.tsx` (route `/cuisine/reception`)
-- MODIFY `src/pages/cuisine/CuisineHomePage.tsx` (tile Réception cliquable + lien)
-
-**Validation** : Sur prod, photo prise → upload Storage → OCR retourne fields → form pré-rempli → submit → doc receptions créé. Photo visible dans Storage console.
-
----
-
-## Step 4.8 — Page /cuisine/etiquettes (form + aperçu + PDF)
-
-**Commit** : `feat(cuisine): page etiquettes DLC + apercu + PDF download`
-
-**Fichiers** :
-
-- CREATE `src/lib/generateEtiquettePdf.ts` (wrap `jspdf` + format 62×29mm)
-- CREATE `src/components/cuisine/EtiquettePreview.tsx` (rendu visuel HTML)
-- CREATE `src/pages/cuisine/EtiquettesPage.tsx` (form + aperçu live + PDF)
-- MODIFY `src/App.tsx` (route `/cuisine/etiquettes`)
-- MODIFY `src/pages/cuisine/CuisineHomePage.tsx` (tile Étiquettes DLC cliquable + lien)
-
-**Validation** : Sélection template "Tartare DLC + 3 j" + date prod aujourd'hui → DLC calculée → PDF téléchargé avec bons contenus → doc etiquettes créé.
-
----
-
-## Step 4.9 — Tests + /audit + deploy + smoke test
-
-**Commit** : `test: tests unit critiques + audit + deploy`
-
-**Fichiers** :
-
-- CREATE `src/hooks/useReceptions.test.ts` (mock Firestore, vérifier createReception passe par parseDoc et n'envoie pas de PII non validée)
-- (Eventuels fixes audit)
-
-**Après** :
-
-- `firebase deploy --only firestore:rules,storage,functions,hosting`
-- Smoke test prod : ajouter template, faire une réception fictive avec photo, générer étiquette
-- `/update-docs` (memory.md, CLAUDE.md, improvements.md)
-- Push branche
-
----
-
-## Notes & risques
-
-- **OCR Claude** : si l'API échoue (timeout, mauvaise réponse JSON), fallback "Remplis manuellement" — le form reste utilisable sans OCR. Le bouton "Réessayer OCR" peut relancer.
-- **Format prompt** : prompt structuré JSON strict pour minimiser parsing errors. Exemple : `Return ONLY a JSON object with these exact keys: produit (string), fournisseur (string|null), lot (string|null), qte (string|null), dlc (string ISO date|null). No prose, no markdown.`
-- **Coût Storage 3 ans** : ~500kb × N réceptions/jour × 365 × 3 = à monitorer. Lifecycle policy GCS à ajouter en it.5+ si volume problématique.
-- **PDF taille** : étiquette = 1 page mini. Pas de souci performance.
-- **Aperçu étiquette** : utilise la même police et layout que la maquette HTML (cf. PMS_04_demo_app.html `label-render` class).
+- jsPDF déjà présent (étiquettes) — **aucune nouvelle dépendance**
+- Les tests rules (`equipements.test.ts`) restent différés tant que JDK 17 (blocker connu)
+- Le badge « OK » des équipements deviendra dynamique avec le module Températures (it. future)
+- `CuisinierFormModal` et `ProductTemplateFormModal` réutilisés tels quels — zéro duplication

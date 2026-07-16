@@ -12,3 +12,4 @@ export * from './cuisinierSession';
 export * from './productTemplate';
 export * from './reception';
 export * from './etiquette';
+export * from './equipement';

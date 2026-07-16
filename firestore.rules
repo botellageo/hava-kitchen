@@ -72,6 +72,16 @@ service cloud.firestore {
       }
 
       // ─────────────────────────────────────────────────────
+      // sub: equipements/{eid} — config frigos/sondes (mutable)
+      // Read : owner + cuisinier (le futur module Températures liste
+      // les équipements côté cuisine). Write : gérant uniquement.
+      // ─────────────────────────────────────────────────────
+      match /equipements/{eid} {
+        allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow create, update, delete: if isRestoOwner(rid);
+      }
+
+      // ─────────────────────────────────────────────────────
       // sub: receptions/{recId} — HACCP immutable (preuve DDPP 3 ans)
       // Create par owner ou cuisinier authentifié. Champs obligatoires
       // garantissent l'intégrité de la preuve.
