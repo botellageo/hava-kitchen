@@ -13,3 +13,4 @@ export * from './productTemplate';
 export * from './reception';
 export * from './etiquette';
 export * from './equipement';
+export * from './exportDdpp';

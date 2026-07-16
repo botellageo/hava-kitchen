@@ -102,6 +102,17 @@ service cloud.firestore {
           && request.resource.data.keys().hasAll(['produit', 'prodDate', 'dlc', 'qte', 'createdAt', 'createdBy']);
         allow update, delete: if false;
       }
+
+      // ─────────────────────────────────────────────────────
+      // sub: exportsDdpp/{xid} — trace des registres générés
+      // (gérant only, create-only : preuve qu'un export a eu lieu)
+      // ─────────────────────────────────────────────────────
+      match /exportsDdpp/{xid} {
+        allow read: if isRestoOwner(rid);
+        allow create: if isRestoOwner(rid)
+          && request.resource.data.keys().hasAll(['mois', 'nbReceptions', 'nbEtiquettes', 'createdAt', 'createdBy']);
+        allow update, delete: if false;
+      }
     }
 
     // ─────────────────────────────────────────────────────────
