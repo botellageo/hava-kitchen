@@ -74,16 +74,19 @@ export default function CuisineHomePage() {
         </h1>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="bg-surface rounded-card flex flex-col border border-dashed border-gray-300 p-5">
+          <Link
+            to="/cuisine/temperatures"
+            className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
+          >
             <div className="bg-brand-soft mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
               🌡️
             </div>
             <div className="text-base font-bold text-gray-900">Températures</div>
             <div className="mt-1 flex-1 text-sm text-gray-500">
-              Lecture frigos et congélateurs. À venir quand les sondes seront livrées.
+              Lecture temps réel des frigos et congélateur.
             </div>
-            <div className="mt-3 text-xs text-gray-400">À venir</div>
-          </div>
+            <div className="text-brand-darker mt-3 text-sm font-semibold">Ouvrir →</div>
+          </Link>
 
           <Link
             to="/cuisine/reception"
