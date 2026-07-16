@@ -41,20 +41,23 @@ export function AdminCardRow({ left, right }: { left: ReactNode; right?: ReactNo
 export function RowButton({
   onClick,
   danger = false,
+  disabled = false,
   children,
 }: {
   onClick: () => void;
   danger?: boolean;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={
         danger
-          ? 'rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50'
-          : 'rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50'
+          ? 'rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50'
+          : 'rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50'
       }
     >
       {children}
