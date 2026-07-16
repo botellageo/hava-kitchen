@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 
 /**
- * Champs extraits d'une étiquette fournisseur par Claude Vision.
+ * Champs extraits d'une étiquette fournisseur par Gemini Vision.
  * Tous les champs métier sont optionnels (l'IA peut ne pas voir ou n'être pas sûre).
  * Seul `produit` est garanti non-null car c'est l'info la plus visible.
  */
@@ -34,43 +34,48 @@ Example output:
 type MediaType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
 
 /**
- * Appelle Claude Vision pour extraire les champs d'une étiquette fournisseur.
+ * Appelle Gemini (via Vertex AI) pour extraire les champs d'une étiquette fournisseur.
  *
- * @param apiKey clé API Anthropic (depuis Firebase secret)
+ * Auth : Application Default Credentials du compte de service de la Cloud Function —
+ * aucune clé API. Facturé sur le projet GCP courant (une seule facture Google
+ * pour un client stand-alone). Prérequis : API `aiplatform.googleapis.com` activée.
+ *
  * @param imageBase64 image encodée base64 (sans préfixe data:)
  * @param mediaType type MIME de l'image
  */
 export async function ocrLabelImage(
-  apiKey: string,
   imageBase64: string,
   mediaType: MediaType,
 ): Promise<OcrLabelResult> {
-  const client = new Anthropic({ apiKey });
+  const project = process.env['GCLOUD_PROJECT'] ?? process.env['GOOGLE_CLOUD_PROJECT'];
+  if (!project) {
+    throw new Error("GCLOUD_PROJECT introuvable dans l'environnement");
+  }
+  const client = new GoogleGenAI({ vertexai: true, project, location: 'global' });
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
-    max_tokens: 512,
-    messages: [
+  const response = await client.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
       {
         role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mediaType, data: imageBase64 },
-          },
-          { type: 'text', text: OCR_PROMPT },
-        ],
+        parts: [{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: OCR_PROMPT }],
       },
     ],
+    config: {
+      temperature: 0,
+      maxOutputTokens: 512,
+      responseMimeType: 'application/json',
+      // OCR pur : pas besoin de raisonnement, et le thinking consommerait maxOutputTokens
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   });
 
-  const firstBlock = response.content[0];
-  if (!firstBlock || firstBlock.type !== 'text') {
-    throw new Error('Réponse Claude inattendue (pas de texte)');
+  let text = response.text?.trim() ?? '';
+  if (!text) {
+    throw new Error('Réponse Gemini inattendue (pas de texte)');
   }
 
   // Robuste : retirer d'éventuels code fences markdown qu'on demande pourtant d'omettre
-  let text = firstBlock.text.trim();
   if (text.startsWith('```')) {
     text = text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/, '');
   }
@@ -79,7 +84,7 @@ export async function ocrLabelImage(
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error("Claude n'a pas retourné un JSON valide");
+    throw new Error("Gemini n'a pas retourné un JSON valide");
   }
 
   if (typeof parsed !== 'object' || parsed === null) {

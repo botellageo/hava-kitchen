@@ -1,11 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import { assertOwnerOrCuisinier } from './auth';
-import { ocrLabelImage, type OcrLabelResult } from './anthropic';
+import { ocrLabelImage, type OcrLabelResult } from './gemini';
 
-const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const REGION = 'europe-west1';
 
 interface OcrReceptionInput {
@@ -25,16 +23,17 @@ function detectMediaType(path: string): MediaType {
 }
 
 /**
- * Cloud Function callable : OCR d'une photo d'étiquette fournisseur via Claude Vision.
+ * Cloud Function callable : OCR d'une photo d'étiquette fournisseur via Gemini (Vertex AI).
  *
  * Auth : owner du resto OU cuisinier authentifié (claim restaurantId).
  * Input : restaurantId + storagePath (path bucket Firebase Storage).
  * Output : OcrLabelResult ou throw HttpsError.
  *
- * Coût : ~0.001€ par photo (Claude haiku-4-5).
+ * Coût : < 0.001€ par photo (gemini-2.5-flash), facturé sur le projet GCP —
+ * aucune clé API externe (ADC du compte de service).
  */
 export const ocrReception = onCall<OcrReceptionInput>(
-  { region: REGION, secrets: [ANTHROPIC_API_KEY] },
+  { region: REGION },
   async (req): Promise<OcrLabelResult> => {
     const restaurantId = req.data?.restaurantId;
     const storagePath = req.data?.storagePath;
@@ -64,7 +63,7 @@ export const ocrReception = onCall<OcrReceptionInput>(
     logger.info(`OCR start for ${storagePath} (${(buffer.length / 1024).toFixed(0)}kb)`);
 
     try {
-      const result = await ocrLabelImage(ANTHROPIC_API_KEY.value(), imageBase64, mediaType);
+      const result = await ocrLabelImage(imageBase64, mediaType);
       logger.info(`OCR done : produit="${result.produit}"`);
       return result;
     } catch (err) {

@@ -2,13 +2,12 @@
 
 ## ⚠️ URGENT — sécurité
 
-- **Révoquer la clé Anthropic actuelle + en créer une nouvelle** (2026-05-14)
-  La clé `ANTHROPIC_API_KEY` en production a été exposée en clair dans un chat. Risque : facturation tierce si captée.
-  Action :
-  1. https://console.anthropic.com/settings/keys → Delete `pms-midi5-firebase`
-  2. Create Key `pms-midi5-firebase-v2`
-  3. Dans terminal local : `firebase functions:secrets:set ANTHROPIC_API_KEY` → coller (masqué)
-  4. Re-deploy : `firebase deploy --only functions:ocrReception`
+- **Révoquer la clé Anthropic exposée** (2026-05-14, mis à jour 2026-07-16)
+  La clé `ANTHROPIC_API_KEY` a été exposée en clair dans un chat. Risque : facturation tierce si captée.
+  Depuis le 2026-07-16, l'OCR tourne sur **Gemini via Vertex AI** (ADC, aucune clé) — la clé Anthropic n'est plus utilisée par l'app.
+  Action restante (simplifiée) :
+  1. https://console.anthropic.com/settings/keys → Delete `pms-midi5-firebase` (aucune clé de remplacement nécessaire)
+  2. Nettoyage : `firebase functions:secrets:destroy ANTHROPIC_API_KEY -P hava-kitchen`
 
 > Backlog de gaps identifiés en cours d'itération. Réévalués à chaque audit/retrospective.
 
