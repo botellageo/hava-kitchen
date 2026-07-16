@@ -3,7 +3,7 @@ import { getDownloadURL, ref as storageRef, uploadBytesResumable } from 'firebas
 import { storage } from '@/lib/firebase';
 import { compressImage } from '@/lib/imageCompress';
 
-interface UploadedPhoto {
+export interface UploadedPhoto {
   photoUrl: string;
   storagePath: string;
 }
