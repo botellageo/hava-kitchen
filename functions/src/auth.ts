@@ -27,3 +27,22 @@ export async function assertRestoOwner(uid: string, restaurantId: string): Promi
     throw new HttpsError('permission-denied', 'Pas owner de ce restaurant');
   }
 }
+
+/**
+ * Vérifie que l'appelant a accès au restaurant : soit owner Firestore,
+ * soit cuisinier authentifié via custom claim restaurantId.
+ * Throw HttpsError sinon.
+ */
+export async function assertOwnerOrCuisinier<T = unknown>(
+  req: CallableRequest<T>,
+  restaurantId: string,
+): Promise<void> {
+  if (!req.auth) {
+    throw new HttpsError('unauthenticated', 'Auth requise');
+  }
+  const claimRid = req.auth.token['restaurantId'];
+  if (typeof claimRid === 'string' && claimRid === restaurantId) {
+    return; // cuisinier authentifié via custom claim
+  }
+  await assertRestoOwner(req.auth.uid, restaurantId);
+}

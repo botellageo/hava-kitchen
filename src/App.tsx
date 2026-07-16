@@ -6,9 +6,12 @@ import SetupRestaurantPage from '@/pages/SetupRestaurantPage';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import DashboardPage from '@/pages/admin/DashboardPage';
 import CuisiniersPage from '@/pages/admin/CuisiniersPage';
+import TemplatesPage from '@/pages/admin/TemplatesPage';
 import ParametresPage from '@/pages/admin/ParametresPage';
 import CuisinierSelectPage from '@/pages/cuisine/CuisinierSelectPage';
 import CuisineHomePage from '@/pages/cuisine/CuisineHomePage';
+import ReceptionPage from '@/pages/cuisine/ReceptionPage';
+import EtiquettesPage from '@/pages/cuisine/EtiquettesPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RequireRestaurant } from '@/components/RequireRestaurant';
 
@@ -37,6 +40,7 @@ function App() {
       >
         <Route path="/admin" element={<DashboardPage />} />
         <Route path="/admin/cuisiniers" element={<CuisiniersPage />} />
+        <Route path="/admin/templates" element={<TemplatesPage />} />
         <Route path="/admin/parametres" element={<ParametresPage />} />
       </Route>
       <Route
@@ -55,6 +59,26 @@ function App() {
           <ProtectedRoute>
             <RequireRestaurant>
               <CuisineHomePage />
+            </RequireRestaurant>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cuisine/reception"
+        element={
+          <ProtectedRoute>
+            <RequireRestaurant>
+              <ReceptionPage />
+            </RequireRestaurant>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cuisine/etiquettes"
+        element={
+          <ProtectedRoute>
+            <RequireRestaurant>
+              <EtiquettesPage />
             </RequireRestaurant>
           </ProtectedRoute>
         }

@@ -1,5 +1,15 @@
 # Improvements — pms-midi5
 
+## ⚠️ URGENT — sécurité
+
+- **Révoquer la clé Anthropic actuelle + en créer une nouvelle** (2026-05-14)
+  La clé `ANTHROPIC_API_KEY` en production a été exposée en clair dans un chat. Risque : facturation tierce si captée.
+  Action :
+  1. https://console.anthropic.com/settings/keys → Delete `pms-midi5-firebase`
+  2. Create Key `pms-midi5-firebase-v2`
+  3. Dans terminal local : `firebase functions:secrets:set ANTHROPIC_API_KEY` → coller (masqué)
+  4. Re-deploy : `firebase deploy --only functions:ocrReception`
+
 > Backlog de gaps identifiés en cours d'itération. Réévalués à chaque audit/retrospective.
 
 ## Priorité — à faire avant MEP prod

@@ -2,9 +2,30 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Auth obligatoire par défaut
+
+    // ─────────────────────────────────────────────────────
+    // restaurants/{rid}/receptions/{receptionId}/{file}
+    // Photos réception fournisseur — preuve DDPP, conservation 3 ans.
+    //
+    // Accès :
+    // - Gérant (owner Firestore) : read + write
+    // - Cuisinier authentifié (custom claim restaurantId == rid) : read + write
+    //
+    // Le firestore.get() consomme 1 read Firestore par requête. Acceptable
+    // vu le volume (quelques photos par jour).
+    // ─────────────────────────────────────────────────────
+    match /restaurants/{rid}/receptions/{receptionId}/{file} {
+      allow read, write: if request.auth != null && (
+        request.auth.token.restaurantId == rid
+        || firestore.get(/databases/(default)/documents/restaurants/$(rid)).data.ownerUid == request.auth.uid
+      );
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Default deny — tout autre path bloqué
+    // ─────────────────────────────────────────────────────
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

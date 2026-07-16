@@ -16,7 +16,7 @@ export default function DashboardPage() {
       <p className="text-sm text-gray-500">Bonjour {greeting}</p>
       <h1 className="text-brand-darker mt-1 mb-6 text-2xl font-bold md:text-3xl">Espace gestion</h1>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link
           to="/admin/cuisiniers"
           className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
@@ -30,6 +30,19 @@ export default function DashboardPage() {
           </div>
           <div className="text-brand-darker mt-3 text-sm font-semibold">
             {loading ? '…' : `${cuisiniersActifs} actif${cuisiniersActifs > 1 ? 's' : ''}`}
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/templates"
+          className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
+        >
+          <div className="bg-brand-soft mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
+            🏷️
+          </div>
+          <div className="text-base font-bold text-gray-900">Produits</div>
+          <div className="mt-1 flex-1 text-sm text-gray-500">
+            Configurer les produits et leur DLC pour les étiquettes.
           </div>
         </Link>
 

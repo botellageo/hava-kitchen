@@ -15,6 +15,7 @@ import { logger } from 'firebase-functions/v2';
 admin.initializeApp();
 
 export { createPairingToken, redeemPairingToken } from './pairing';
+export { ocrReception } from './ocr';
 
 // ─────────────────────────────────────────────────────────────
 // Backup quotidien Firestore vers Cloud Storage

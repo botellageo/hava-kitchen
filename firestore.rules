@@ -57,6 +57,41 @@ service cloud.firestore {
       match /pairingTokens/{tid} {
         allow read, write: if false;
       }
+
+      // ─────────────────────────────────────────────────────
+      // sub: productTemplates/{pid} — templates DLC partagés
+      // Read + create + update : owner ET cuisinier (le cuisinier peut
+      // ajouter un nouveau produit ou ajuster la DLC à la volée depuis
+      // l'écran Étiquettes en cuisine, sans repasser par l'admin).
+      // Delete : owner only (préserve la cohérence avec l'historique
+      // d'étiquettes qui référencent le nom du produit).
+      // ─────────────────────────────────────────────────────
+      match /productTemplates/{pid} {
+        allow read, create, update: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow delete: if isRestoOwner(rid);
+      }
+
+      // ─────────────────────────────────────────────────────
+      // sub: receptions/{recId} — HACCP immutable (preuve DDPP 3 ans)
+      // Create par owner ou cuisinier authentifié. Champs obligatoires
+      // garantissent l'intégrité de la preuve.
+      // ─────────────────────────────────────────────────────
+      match /receptions/{recId} {
+        allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow create: if (isRestoOwner(rid) || isCuisinierOfResto(rid))
+          && request.resource.data.keys().hasAll(['produit', 'photoUrl', 'createdAt', 'createdBy']);
+        allow update, delete: if false;
+      }
+
+      // ─────────────────────────────────────────────────────
+      // sub: etiquettes/{eid} — HACCP immutable (trace des étiquettes générées)
+      // ─────────────────────────────────────────────────────
+      match /etiquettes/{eid} {
+        allow read: if isRestoOwner(rid) || isCuisinierOfResto(rid);
+        allow create: if (isRestoOwner(rid) || isCuisinierOfResto(rid))
+          && request.resource.data.keys().hasAll(['produit', 'prodDate', 'dlc', 'qte', 'createdAt', 'createdBy']);
+        allow update, delete: if false;
+      }
     }
 
     // ─────────────────────────────────────────────────────────

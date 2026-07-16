@@ -9,3 +9,6 @@ export * from './common';
 export * from './restaurant';
 export * from './cuisinier';
 export * from './cuisinierSession';
+export * from './productTemplate';
+export * from './reception';
+export * from './etiquette';
