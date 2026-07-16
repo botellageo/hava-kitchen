@@ -114,14 +114,17 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 ## État actuel
 
-- **Itération 2** — Polish (extractions composants) — TERMINÉE 2026-05-14
-- 24 commits sur la branche `claude/interesting-taussig-f9ec09`
+- **Itération 5** — Refonte Espace gestion admin (dashboard façon maquette) — TERMINÉE 2026-07-16, audit #2 **A-**
+- Branche `claude/admin-dashboard-maquette` (6 commits) — à merger sur `main` + déployer (hosting + **rules** obligatoires : 2 nouvelles sous-collections)
+- OCR réceptions basculé sur **Gemini 2.5 Flash via Vertex AI** (2026-07-16) — zéro clé API (ADC), déployé en prod. Prérequis nouvelle instance : API `aiplatform` + rôle `aiplatform.user` au compte de service compute.
 
 ### Itérations passées
 
 - ✅ It.0 — Setup initial (squelette + garde-fous, 2026-05-14)
 - ✅ It.1 — PWA + Auth + Schémas Zod + Rules multi-resto + Hooks + Admin + Cuisine + CF pairing + QR (2026-05-14, B+)
 - ✅ It.2 — Polish : extractions AppLogo/PinInput/Modal/getInitials, split CuisiniersPage + SetupRestaurantPage < 200L, nav AdminLayout factorisée, ToastProvider cleanup timers, cuisinierSessionSchema Zod (2026-05-14, 53/53 tests OK, refactor pur)
+- ✅ It.3/4 — Signup gérant + Réception photo OCR + Étiquettes DLC (aperçu live, PDF, chips produits) + page admin Produits + 3 sous-collections HACCP (2026-05, mergé sur main le 2026-07-16)
+- ✅ It.5 — Refonte dashboard admin façon maquette : 4 cards inline (Équipe / Frigos & sondes / Templates / Exports DDPP), collection `equipements` (+ seed démo), registre DDPP mensuel PDF + trace `exportsDdpp` create-only, suppression pages Cuisiniers/Produits (2026-07-16, audit #2 A-)
 
 ### Acquis it.1
 
@@ -148,8 +151,8 @@ Pas de Cursor. Pas de Benoit. Pas de division front/back — Geoffrey tient tout
 
 ### Fichiers > 200 lignes à surveiller
 
-Aucun (it.2 a tout split ✓). Le plus gros : `CuisinierFormModal.tsx` à 135 lignes.
+`generateRegistrePdf.ts` à 205 lignes (lib, pas composant — OK). Plus gros composant : `EquipementFormModal.tsx` à 172 lignes.
 
 ### Prochaine étape
 
-→ Itération 3 (premier module HACCP, probablement relevé de température quand sondes livrées).
+→ Compte « resto démo » pré-rempli pour les démos restaurateurs, puis module Températures en saisie manuelle (sondes = roadmap). Backlog qualité audit #2 dans `docs/improvements.md`.

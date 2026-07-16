@@ -11,6 +11,13 @@
 
 > Backlog de gaps identifiés en cours d'itération. Réévalués à chaque audit/retrospective.
 
+## Backlog qualité — audit #2 (2026-07-16, refonte dashboard admin)
+
+- **Extraire `AdminCardLoading`/`AdminCardEmpty`** dans `AdminCard.tsx` — markup « Chargement… » et état vide dupliqués à l'identique dans les 4 cards du dashboard.
+- **Extraire `labelClass`** dans `EquipementFormModal.tsx` (classe de label répétée 5×, `inputClass` l'est déjà).
+- **Unifier la validation des seuils** équipement : `EquipementFormModal` (NaN) et `lib/equipements.ts` (isFinite) vérifient la même règle différemment — faire appeler `validateEquipementInput` par le form.
+- **Renommer `x`** dans `ExportsDdppCard.tsx` (`formatGenereLe(x)`, `.map((x) =>`) en `exportDoc`.
+
 ## Priorité — à faire avant MEP prod
 
 ### Branding & PWA (issu de It.1 review)

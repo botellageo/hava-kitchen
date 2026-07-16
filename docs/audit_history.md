@@ -86,3 +86,41 @@
 2. Push branche `claude/interesting-taussig-f9ec09` + créer PR vers `main`
 3. `/deploy-firebase` (rules + functions + hosting) **après que Geoffrey ait activé Blaze**
 4. It.2 : tackle improvements.md (extraction composants AppLogo/PinInput, Modal réutilisable, split pages > 200 lignes, JDK 21 install pour test:rules)
+
+## Audit #2 — 2026-07-16 — Refonte Espace gestion admin (dashboard façon maquette)
+
+### Résultat: PASS — Grade A-
+
+### Fichiers audités
+
+21 fichiers de la branche `claude/admin-dashboard-maquette` (1926 lignes) : schémas `equipement`/`exportDdpp`, rules (2 nouvelles sous-collections), hooks `useEquipements`/`useExportsDdpp`, lib registre PDF (`registreData`, `generateRegistrePdf`, `dateFormat`), 6 composants `src/components/admin/`, `DashboardPage`, `App.tsx`, `AdminLayout`, tests.
+
+### Passe 1 (scripts)
+
+- Typecheck: ✅ | ESLint (fichiers itération): ✅ | Prettier: ✅ | Secrets: ✅ (0 match)
+- Rules: 0 `allow if true` ✅ | Immutabilité HACCP: 3 collections `update, delete: if false` (receptions, etiquettes, exportsDdpp) ✅
+- Tests: 35 unitaires ✅ (+41 rules différés JDK 21)
+
+### Findings confirmés
+
+#### BLOQUANT
+
+Aucun. (Agent Crashes : lectures 100 % `tryParseDoc`, cleanups onSnapshot OK, zéro `!`, accès tableaux gardés, casts sûrs.)
+
+#### WARNING
+
+1. [admin cards ×4] Markup « Chargement… » et état vide dupliqués à l'identique dans EquipeCard/EquipementsCard/TemplatesCard/ExportsDdppCard → extraire `AdminCardLoading`/`AdminCardEmpty` dans AdminCard.tsx
+2. [EquipementFormModal] classe Tailwind de label répétée 5× dans le fichier (extraire `labelClass` comme `inputClass`)
+3. [EquipementFormModal:44 / lib/equipements.ts:26] validation seuils dupliquée (NaN vs isFinite) — deux sources de vérité pour la même règle
+4. [ExportsDdppCard:20] nommage `x` non descriptif (`formatGenereLe(x)`, `.map((x) =>`)
+
+### Faux positifs éliminés (passe 3)
+
+- [firestore.rules:79] « `equipements` sans hasAll contrairement aux collections sœurs » — REJETÉ : les collections mutables de config (`cuisiniers`, `productTemplates`) n'ont pas de `hasAll` non plus ; le pattern `hasAll` est réservé aux collections-preuves immutables. `equipements` suit la convention.
+- « Paramètres `c`/`t`/`e` une lettre » — REJETÉ partiellement : convention préexistante du projet (CuisiniersPage/TemplatesPage historiques) ; seul `x` est retenu (warning 4).
+
+### Verdict
+
+0 BLOQUANT, 4 WARNING → **A-** (warnings = backlog maintenabilité, cf. improvements.md)
+
+Note : audit exécuté en 3 agents scoped (Crashes/Sécurité/Qualité) ; 2 agents relancés après coupure limite session.
