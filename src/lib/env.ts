@@ -22,7 +22,9 @@ if (!parsed.success) {
 
 export const env = {
   ...parsed.data,
-  USE_EMULATOR: parsed.data.VITE_USE_EMULATOR === 'true',
+  // Garde-fou : l'émulateur ne peut JAMAIS être actif dans un build de prod,
+  // même si .env.local contient VITE_USE_EMULATOR=true au moment du build.
+  USE_EMULATOR: parsed.data.VITE_USE_EMULATOR === 'true' && import.meta.env.DEV,
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
 };
