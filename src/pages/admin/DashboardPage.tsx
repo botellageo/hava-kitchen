@@ -1,77 +1,45 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRestaurant } from '@/hooks/useRestaurant';
-import { useCuisiniers } from '@/hooks/useCuisiniers';
+import { EquipeCard } from '@/components/admin/EquipeCard';
+import { TemplatesCard } from '@/components/admin/TemplatesCard';
+import { EquipementsCard } from '@/components/admin/EquipementsCard';
+import { ExportsDdppCard } from '@/components/admin/ExportsDdppCard';
 
+/**
+ * Espace gestion (dashboard admin) — grille de 4 cards riches façon
+ * maquette PMS_04 : tout se gère inline, sans pages dédiées.
+ */
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { restaurantId } = useRestaurant();
-  const { cuisiniers, loading } = useCuisiniers(restaurantId);
+  const { restaurant, restaurantId } = useRestaurant();
 
-  const cuisiniersActifs = cuisiniers.filter((c) => c.actif).length;
   const greeting = user?.email?.split('@')[0] ?? 'Gérant';
 
   return (
     <div>
-      <p className="text-sm text-gray-500">Bonjour {greeting}</p>
-      <h1 className="text-brand-darker mt-1 mb-6 text-2xl font-bold md:text-3xl">Espace gestion</h1>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link
-          to="/admin/cuisiniers"
-          className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
-        >
-          <div className="bg-brand-soft mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
-            👥
-          </div>
-          <div className="text-base font-bold text-gray-900">Cuisiniers</div>
-          <div className="mt-1 flex-1 text-sm text-gray-500">
-            Ajouter, modifier, désactiver un membre de l'équipe.
-          </div>
-          <div className="text-brand-darker mt-3 text-sm font-semibold">
-            {loading ? '…' : `${cuisiniersActifs} actif${cuisiniersActifs > 1 ? 's' : ''}`}
-          </div>
-        </Link>
-
-        <Link
-          to="/admin/templates"
-          className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
-        >
-          <div className="bg-brand-soft mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
-            🏷️
-          </div>
-          <div className="text-base font-bold text-gray-900">Produits</div>
-          <div className="mt-1 flex-1 text-sm text-gray-500">
-            Configurer les produits et leur DLC pour les étiquettes.
-          </div>
-        </Link>
-
-        <Link
-          to="/admin/parametres"
-          className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
-        >
-          <div className="bg-brand-soft mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
-            ⚙️
-          </div>
-          <div className="text-base font-bold text-gray-900">Paramètres</div>
-          <div className="mt-1 flex-1 text-sm text-gray-500">
-            Modifier le PIN gérant et les infos du restaurant.
-          </div>
-        </Link>
-
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-gray-500">Espace manager — {greeting}</p>
+          <h1 className="text-brand-darker mt-1 text-2xl font-bold md:text-3xl">⚙️ Gestion</h1>
+        </div>
         <Link
           to="/cuisine"
-          className="bg-surface rounded-card hover:shadow-tilehover flex flex-col border border-gray-200 p-5 transition hover:-translate-y-0.5"
+          className="bg-brand hover:bg-brand-dark shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
         >
-          <div className="bg-brand-soft mb-4 flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
-            🍳
-          </div>
-          <div className="text-base font-bold text-gray-900">Mode cuisine</div>
-          <div className="mt-1 flex-1 text-sm text-gray-500">
-            Écran cuisinier pour la tablette — sélection profil + PIN.
-          </div>
-          <div className="text-brand-darker mt-3 text-sm font-semibold">Ouvrir →</div>
+          Mode cuisine →
         </Link>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <EquipeCard restaurantId={restaurantId} />
+        <EquipementsCard restaurantId={restaurantId} />
+        <TemplatesCard restaurantId={restaurantId} />
+        <ExportsDdppCard
+          restaurantId={restaurantId}
+          restaurantNom={restaurant?.nom ?? 'Restaurant'}
+          userEmail={user?.email ?? 'gérant'}
+        />
       </div>
     </div>
   );

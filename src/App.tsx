@@ -5,8 +5,6 @@ import PairPage from '@/pages/PairPage';
 import SetupRestaurantPage from '@/pages/SetupRestaurantPage';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import DashboardPage from '@/pages/admin/DashboardPage';
-import CuisiniersPage from '@/pages/admin/CuisiniersPage';
-import TemplatesPage from '@/pages/admin/TemplatesPage';
 import ParametresPage from '@/pages/admin/ParametresPage';
 import CuisinierSelectPage from '@/pages/cuisine/CuisinierSelectPage';
 import CuisineHomePage from '@/pages/cuisine/CuisineHomePage';
@@ -39,8 +37,6 @@ function App() {
         }
       >
         <Route path="/admin" element={<DashboardPage />} />
-        <Route path="/admin/cuisiniers" element={<CuisiniersPage />} />
-        <Route path="/admin/templates" element={<TemplatesPage />} />
         <Route path="/admin/parametres" element={<ParametresPage />} />
       </Route>
       <Route

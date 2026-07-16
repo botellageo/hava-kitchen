@@ -6,8 +6,6 @@ import { AppLogo } from '@/components/ui/AppLogo';
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Accueil', end: true },
-  { to: '/admin/cuisiniers', label: 'Cuisiniers', end: false },
-  { to: '/admin/templates', label: 'Produits', end: false },
   { to: '/admin/parametres', label: 'Paramètres', end: false },
 ];
 
